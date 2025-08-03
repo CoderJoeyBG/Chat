@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lyla Testing #1 - Chat</title>
+    <title>Lyla Testing #1 - Discord Chat</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -902,15 +902,15 @@
             }
 
             async initializePeerConnection() {
-                // Create peer connection with multiple STUN servers for better connectivity
+                // Clear any existing signaling data
+                this.clearSignalingData();
+                
+                // Create peer connection with STUN servers
                 this.peerConnection = new RTCPeerConnection({
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:stun2.l.google.com:19302' },
-                        { urls: 'stun:stun.services.mozilla.com' }
-                    ],
-                    iceCandidatePoolSize: 10
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
                 });
 
                 // Set up data channel
@@ -926,13 +926,15 @@
                     };
                 }
 
-                // Handle ICE candidates
-                this.peerConnection.onicecandidate = async (event) => {
+                // Collect ICE candidates
+                this.localIceCandidates = [];
+                this.peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
-                        await this.saveToStorage('ice-candidate', {
-                            candidate: event.candidate,
-                            from: this.username
-                        });
+                        this.localIceCandidates.push(event.candidate);
+                        this.saveSignalingData();
+                    } else {
+                        // ICE gathering complete
+                        console.log('ICE gathering complete');
                     }
                 };
 
@@ -948,6 +950,8 @@
                         if (this.connectionTimeout) {
                             clearTimeout(this.connectionTimeout);
                         }
+                        // Clear signaling data after successful connection
+                        setTimeout(() => this.clearSignalingData(), 5000);
                     } else if (state === 'disconnected' || state === 'failed' || state === 'closed') {
                         this.isConnected = false;
                         this.updateConnectionStatus('disconnected');
@@ -955,22 +959,11 @@
                     }
                 };
 
-                // Start the signaling process
+                // Start the connection process
                 if (this.isHost) {
-                    // Host creates offer
-                    const offer = await this.peerConnection.createOffer();
-                    await this.peerConnection.setLocalDescription(offer);
-                    
-                    await this.saveToStorage('offer', {
-                        offer: offer,
-                        username: this.username
-                    });
-                    
-                    // Start listening for answer
-                    this.listenForAnswer();
+                    await this.createOffer();
                 } else {
-                    // Guest looks for offer
-                    this.listenForOffer();
+                    this.waitForOffer();
                 }
 
                 this.updateUI();
@@ -1035,125 +1028,163 @@
                 return false;
             }
 
-            async listenForOffer() {
-                const checkForOffer = async () => {
-                    try {
-                        const data = await this.getFromStorage('offer');
-                        if (data && data.username !== this.username) {
-                            console.log('Found offer, creating answer...');
-                            
-                            await this.peerConnection.setRemoteDescription(data.offer);
-                            const answer = await this.peerConnection.createAnswer();
-                            await this.peerConnection.setLocalDescription(answer);
-                            
-                            await this.saveToStorage('answer', {
-                                answer: answer,
-                                username: this.username
-                            });
-                            
-                            this.remoteUsername = data.username;
-                            this.listenForIceCandidates();
-                            return true;
-                        }
-                    } catch (error) {
-                        console.error('Error in listenForOffer:', error);
-                    }
-                    return false;
-                };
+            async createOffer() {
+                try {
+                    console.log('Creating offer...');
+                    const offer = await this.peerConnection.createOffer();
+                    await this.peerConnection.setLocalDescription(offer);
+                    
+                    // Save offer with username
+                    this.saveSignalingData();
+                    this.addSystemMessage('📡 Offer created, waiting for peer...');
+                    
+                    // Wait for answer
+                    this.waitForAnswer();
+                } catch (error) {
+                    console.error('Error creating offer:', error);
+                    this.addSystemMessage('❌ Failed to create offer');
+                }
+            }
 
-                // Check periodically for offer
-                const interval = setInterval(async () => {
-                    const found = await checkForOffer();
-                    if (found) {
-                        clearInterval(interval);
+            waitForOffer() {
+                console.log('Waiting for offer...');
+                const checkInterval = setInterval(() => {
+                    const data = this.getSignalingData();
+                    if (data && data.offer && data.username !== this.username) {
+                        console.log('Found offer, creating answer...');
+                        clearInterval(checkInterval);
+                        this.handleOffer(data);
                     }
                 }, 1000);
 
-                // Stop checking after timeout
+                // Stop waiting after timeout
                 setTimeout(() => {
-                    clearInterval(interval);
+                    clearInterval(checkInterval);
+                    if (!this.isConnected) {
+                        this.addSystemMessage('⏰ No offer found, connection timed out');
+                        this.updateConnectionStatus('disconnected');
+                    }
                 }, 25000);
             }
 
-            async listenForAnswer() {
-                const checkForAnswer = async () => {
-                    try {
-                        const data = await this.getFromStorage('answer');
-                        if (data && data.username !== this.username) {
-                            console.log('Found answer, setting remote description...');
-                            
-                            await this.peerConnection.setRemoteDescription(data.answer);
-                            this.remoteUsername = data.username;
-                            this.listenForIceCandidates();
-                            return true;
-                        }
-                    } catch (error) {
-                        console.error('Error in listenForAnswer:', error);
-                    }
-                    return false;
-                };
-
-                // Check periodically for answer
-                const interval = setInterval(async () => {
-                    const found = await checkForAnswer();
-                    if (found) {
-                        clearInterval(interval);
-                    }
-                }, 1000);
-
-                // Stop checking after timeout
-                setTimeout(() => {
-                    clearInterval(interval);
-                }, 25000);
-            }
-
-            async listenForIceCandidates() {
-                const processedCandidates = new Set();
-                
-                const checkForCandidates = async () => {
-                    try {
-                        const candidates = await this.getFromStorage('ice-candidates') || [];
-                        
-                        for (const candidateData of candidates) {
-                            const candidateId = JSON.stringify(candidateData.candidate);
-                            if (candidateData.from !== this.username && !processedCandidates.has(candidateId)) {
-                                console.log('Adding ICE candidate...');
-                                await this.peerConnection.addIceCandidate(candidateData.candidate);
-                                processedCandidates.add(candidateId);
+            async handleOffer(data) {
+                try {
+                    console.log('Handling offer from:', data.username);
+                    this.remoteUsername = data.username;
+                    
+                    await this.peerConnection.setRemoteDescription(data.offer);
+                    const answer = await this.peerConnection.createAnswer();
+                    await this.peerConnection.setLocalDescription(answer);
+                    
+                    // Save answer
+                    this.saveSignalingData();
+                    this.addSystemMessage('📡 Answer sent, establishing connection...');
+                    
+                    // Add remote ICE candidates
+                    if (data.iceCandidates) {
+                        for (const candidate of data.iceCandidates) {
+                            try {
+                                await this.peerConnection.addIceCandidate(candidate);
+                            } catch (error) {
+                                console.error('Error adding ICE candidate:', error);
                             }
                         }
-                    } catch (error) {
-                        console.error('Error processing ICE candidates:', error);
                     }
+                } catch (error) {
+                    console.error('Error handling offer:', error);
+                    this.addSystemMessage('❌ Failed to handle offer');
+                }
+            }
+
+            waitForAnswer() {
+                console.log('Waiting for answer...');
+                const checkInterval = setInterval(() => {
+                    const data = this.getSignalingData();
+                    if (data && data.answer && data.username !== this.username) {
+                        console.log('Found answer from:', data.username);
+                        clearInterval(checkInterval);
+                        this.handleAnswer(data);
+                    }
+                }, 1000);
+
+                // Stop waiting after timeout
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    if (!this.isConnected) {
+                        this.addSystemMessage('⏰ No answer received, connection timed out');
+                        this.updateConnectionStatus('disconnected');
+                    }
+                }, 25000);
+            }
+
+            async handleAnswer(data) {
+                try {
+                    console.log('Handling answer from:', data.username);
+                    this.remoteUsername = data.username;
+                    
+                    await this.peerConnection.setRemoteDescription(data.answer);
+                    this.addSystemMessage('📡 Answer received, finalizing connection...');
+                    
+                    // Add remote ICE candidates
+                    if (data.iceCandidates) {
+                        for (const candidate of data.iceCandidates) {
+                            try {
+                                await this.peerConnection.addIceCandidate(candidate);
+                            } catch (error) {
+                                console.error('Error adding ICE candidate:', error);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error handling answer:', error);
+                    this.addSystemMessage('❌ Failed to handle answer');
+                }
+            }
+
+            saveSignalingData() {
+                const key = `lyla-signal-${this.roomId}`;
+                const data = {
+                    username: this.username,
+                    timestamp: Date.now()
                 };
 
-                // Check for ICE candidates periodically
-                const interval = setInterval(checkForCandidates, 1000);
-                
-                // Stop after connection is established or timeout
-                setTimeout(() => {
-                    clearInterval(interval);
-                }, 30000);
-            }
-
-            async saveToStorage(type, data) {
-                const key = `lyla-p2p-${this.roomId}`;
-                const stored = JSON.parse(localStorage.getItem(key) || '{}');
-                
-                if (type === 'ice-candidate') {
-                    if (!stored['ice-candidates']) stored['ice-candidates'] = [];
-                    stored['ice-candidates'].push(data);
-                } else {
-                    stored[type] = data;
+                // Add offer if we have one
+                if (this.peerConnection.localDescription && this.peerConnection.localDescription.type === 'offer') {
+                    data.offer = this.peerConnection.localDescription;
                 }
-                
-                localStorage.setItem(key, JSON.stringify(stored));
+
+                // Add answer if we have one
+                if (this.peerConnection.localDescription && this.peerConnection.localDescription.type === 'answer') {
+                    data.answer = this.peerConnection.localDescription;
+                }
+
+                // Add ICE candidates
+                if (this.localIceCandidates && this.localIceCandidates.length > 0) {
+                    data.iceCandidates = this.localIceCandidates;
+                }
+
+                localStorage.setItem(key, JSON.stringify(data));
+                console.log('Saved signaling data:', data);
             }
 
-            async getFromStorage(type) {
-                const key = `lyla-p2p-${this.roomId}`;
-                const stored = JSON.parse(localStorage.getItem(key) || '{}');
-                return stored[type];
+            getSignalingData() {
+                const key = `lyla-signal-${this.roomId}`;
+                const stored = localStorage.getItem(key);
+                if (stored) {
+                    try {
+                        return JSON.parse(stored);
+                    } catch (error) {
+                        console.error('Error parsing signaling data:', error);
+                        return null;
+                    }
+                }
+                return null;
+            }
+
+            clearSignalingData() {
+                const key = `lyla-signal-${this.roomId}`;
+                localStorage.removeItem(key);
+                console.log('Cleared signaling data for room:', this.roomId);
             }
 
             sendMessage() {
