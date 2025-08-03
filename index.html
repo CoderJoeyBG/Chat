@@ -828,15 +828,55 @@
 
     <!-- Geo-blocking Script -->
     <script>
-        fetch("https://ipapi.co/json/")
+        fetch("https://ipinfo.io/json?token=0ac40ab6ccb890")
             .then(response => response.json())
             .then(data => {
-                const restrictedCountries = ['GB', 'US']; // GB = UK, US = United States
-                if (restrictedCountries.includes(data.country_code)) {
+                const restrictedCountries = ['GB', 'US'];
+                if (restrictedCountries.includes(data.country)) {
                     document.body.innerHTML = `
-                        <div style="display:flex;justify-content:center;align-items:center;height:100vh;text-align:center;flex-direction:column;">
+                        <style>
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                background: linear-gradient(135deg, #1e1e2f, #2a2a3b);
+                                color: #fff;
+                                font-family: 'Segoe UI', sans-serif;
+                                height: 100vh;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            }
+                            .block-card {
+                                background: #2c2f48;
+                                padding: 40px;
+                                border-radius: 16px;
+                                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+                                max-width: 400px;
+                                text-align: center;
+                                animation: fadeIn 0.8s ease;
+                            }
+                            .block-card h1 {
+                                font-size: 28px;
+                                margin-bottom: 10px;
+                            }
+                            .block-card p {
+                                font-size: 16px;
+                                color: #ccc;
+                            }
+                            .blocked-icon {
+                                font-size: 48px;
+                                margin-bottom: 20px;
+                                color: #ff4b5c;
+                            }
+                            @keyframes fadeIn {
+                                from { opacity: 0; transform: scale(0.95); }
+                                to { opacity: 1; transform: scale(1); }
+                            }
+                        </style>
+                        <div class="block-card">
+                            <div class="blocked-icon">🚫</div>
                             <h1>Access Restricted</h1>
-                            <p>Sorry, this chat is not available in your region (${data.country_name}).</p>
+                            <p>We're sorry, but this chat isn't available in your region <strong>(${data.country})</strong>.</p>
                         </div>
                     `;
                 } else {
@@ -845,7 +885,7 @@
             })
             .catch(err => {
                 console.error('GeoIP lookup failed', err);
-                document.getElementById('usernameSetup').style.display = 'block'; // fallback if error
+                document.getElementById('usernameSetup').style.display = 'block';
             });
     </script>
 </body>
