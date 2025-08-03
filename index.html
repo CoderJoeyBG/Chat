@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lyla Testing #1 - Discord Server</title>
+    <title>Global Chat Room</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
         * {
             margin: 0;
             padding: 0;
@@ -14,1460 +12,535 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #1e1f23;
-            color: #f2f3f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             height: 100vh;
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* Animated background */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 94, 77, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.15) 0%, transparent 50%);
-            z-index: -1;
-        }
-
-        .app-container {
             display: flex;
-            height: 100vh;
-            backdrop-filter: blur(20px);
-        }
-
-        .server-list {
-            width: 72px;
-            background: linear-gradient(145deg, #1a1b1f 0%, #16171a 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 12px 0;
-            gap: 12px;
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
-        }
-
-        .server-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            position: relative;
-            box-shadow: 0 8px 16px rgba(88, 101, 242, 0.25);
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            align-items: center;
         }
 
-        .server-icon::before {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            background: linear-gradient(135deg, #5865f2, #7289da, #ff6b6b, #4ecdc4);
-            border-radius: 50%;
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .server-icon:hover {
-            border-radius: 16px;
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 12px 24px rgba(88, 101, 242, 0.4);
-        }
-
-        .server-icon:hover::before {
-            opacity: 1;
-        }
-
-        .server-icon.active::after {
-            content: '';
-            position: absolute;
-            left: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 8px;
-            height: 40px;
-            background: linear-gradient(to bottom, #5865f2, #7289da);
-            border-radius: 0 4px 4px 0;
-            box-shadow: 2px 0 8px rgba(88, 101, 242, 0.5);
-        }
-
-        .sidebar {
-            width: 280px;
-            background: linear-gradient(145deg, #2b2d31 0%, #232428 100%);
+        .chat-container {
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .server-header {
-            height: 56px;
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            font-weight: 700;
-            font-size: 16px;
-            color: #f2f3f5;
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            position: relative;
             overflow: hidden;
-        }
-
-        .server-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .server-header:hover::before {
-            left: 100%;
-        }
-
-        .channels-container {
-            flex: 1;
-            padding: 20px 12px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-        }
-
-        .channels-container::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .channels-container::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .channels-container::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
-        }
-
-        .channel-category {
-            color: #949ba4;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin: 24px 12px 8px 12px;
-            letter-spacing: 0.5px;
-            position: relative;
-        }
-
-        .channel-category::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 20px;
-            height: 2px;
-            background: linear-gradient(90deg, #5865f2, transparent);
-            border-radius: 1px;
-        }
-
-        .channel {
-            display: flex;
-            align-items: center;
-            padding: 8px 12px;
-            margin: 2px 0;
-            border-radius: 8px;
-            cursor: pointer;
-            color: #949ba4;
-            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .channel::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.3s ease;
-        }
-
-        .channel:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #f2f3f5;
-            transform: translateX(4px);
-        }
-
-        .channel:hover::before {
-            left: 100%;
-        }
-
-        .channel.active {
-            background: linear-gradient(135deg, rgba(88, 101, 242, 0.2) 0%, rgba(114, 137, 218, 0.2) 100%);
-            color: #f2f3f5;
-            border: 1px solid rgba(88, 101, 242, 0.3);
-            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.15);
-        }
-
-        .channel-icon {
-            margin-right: 8px;
-            font-size: 18px;
-            transition: transform 0.2s ease;
-        }
-
-        .channel:hover .channel-icon {
-            transform: scale(1.1);
-        }
-
-        .online-users {
-            margin-left: auto;
-            background: #00d4aa;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: linear-gradient(145deg, #313338 0%, #2b2d31 100%);
-            position: relative;
         }
 
         .chat-header {
-            height: 56px;
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(20px);
-        }
-
-        .chat-title {
-            font-weight: 700;
-            font-size: 18px;
-            color: #f2f3f5;
-            margin-left: 8px;
-            background: linear-gradient(135deg, #f2f3f5 0%, #949ba4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .channel-topic {
-            margin-left: 12px;
-            color: #949ba4;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .server-info {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-weight: 600;
-            font-size: 12px;
-            transition: all 0.2s ease;
-        }
-
-        .connection-status.connected {
-            background: #00d4aa;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
         }
 
-        .connection-status.connecting {
-            background: #ffa500;
-            color: white;
-        }
-
-        .connection-status.disconnected {
-            background: #ff6b6b;
-            color: white;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: currentColor;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .server-id {
-            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .server-id:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
         }
 
         .online-count {
-            background: #00d4aa;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .username-setup {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .username-setup h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .username-setup p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .username-input {
+            width: 100%;
+            max-width: 300px;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .username-input:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .join-btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            padding: 6px 12px;
-            border-radius: 16px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
             font-weight: 600;
-            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .join-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(79, 172, 254, 0.4);
+        }
+
+        .join-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .chat-main {
+            display: none;
+            flex: 1;
+            flex-direction: column;
         }
 
         .messages-container {
             flex: 1;
+            padding: 20px;
             overflow-y: auto;
-            padding: 20px 0;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-        }
-
-        .messages-container::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .messages-container::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .messages-container::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
+            background: #f8fafc;
         }
 
         .message {
-            padding: 4px 20px;
-            margin-bottom: 20px;
-            position: relative;
-            transition: all 0.2s ease;
-            border-radius: 8px;
-            margin: 2px 16px;
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+            animation: slideIn 0.3s ease;
         }
 
-        .message:hover {
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.own {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message.other {
+            background: white;
+            color: #333;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 6px;
         }
 
         .message-header {
-            display: flex;
-            align-items: baseline;
-            margin-bottom: 4px;
-        }
-
-        .message-author {
-            font-weight: 600;
-            font-size: 16px;
-            margin-right: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .message-author:hover {
-            text-decoration: underline;
-        }
-
-        .message-timestamp {
             font-size: 12px;
-            color: #80848e;
-            font-weight: 500;
+            font-weight: 600;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .message.own .message-header {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .message.other .message-header {
+            color: #4facfe;
         }
 
         .message-content {
-            color: #f2f3f5;
+            font-size: 14px;
             line-height: 1.4;
-            font-size: 16px;
-            font-weight: 400;
         }
 
-        .message-input-container {
-            padding: 0 20px 24px 20px;
+        .message-time {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 4px;
         }
 
-        .message-input-wrapper {
-            background: linear-gradient(145deg, #383a40 0%, #2e3035 100%);
-            border-radius: 12px;
-            padding: 12px 16px;
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
             display: flex;
+            gap: 15px;
             align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .message-input-wrapper::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(88, 101, 242, 0.1), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .message-input-wrapper:focus-within {
-            border-color: #5865f2;
-            box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .message-input-wrapper:focus-within::before {
-            left: 100%;
         }
 
         .message-input {
             flex: 1;
-            background: transparent;
-            border: none;
-            color: #f2f3f5;
-            font-size: 16px;
-            font-weight: 400;
+            padding: 12px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
             outline: none;
-            resize: none;
-            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s ease;
         }
 
-        .message-input::placeholder {
-            color: #80848e;
-            font-weight: 400;
+        .message-input:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 10px rgba(79, 172, 254, 0.2);
         }
 
-        .send-button {
-            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
-            border: none;
+        .send-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+            border: none;
+            border-radius: 20px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 12px;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 70px;
         }
 
-        .send-button:hover:not(:disabled) {
-            transform: scale(1.1) rotate(5deg);
-            box-shadow: 0 6px 20px rgba(88, 101, 242, 0.5);
+        .send-btn:hover {
+            transform: scale(1.05);
         }
 
-        .send-button:disabled {
+        .send-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
-        .join-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(20px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            animation: modalFadeIn 0.3s ease;
-        }
-
-        @keyframes modalFadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal-content {
-            background: linear-gradient(145deg, #2b2d31 0%, #232428 100%);
-            border-radius: 16px;
-            padding: 40px;
-            width: 480px;
-            max-width: 90vw;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-            animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        @keyframes modalSlideIn {
-            from { transform: translateY(-50px) scale(0.9); opacity: 0; }
-            to { transform: translateY(0) scale(1); opacity: 1; }
-        }
-
-        .modal-header {
-            font-size: 28px;
-            font-weight: 700;
-            color: #f2f3f5;
-            margin-bottom: 8px;
-            text-align: center;
-            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .modal-description {
-            color: #949ba4;
-            margin-bottom: 24px;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .input-group {
-            margin-bottom: 24px;
-        }
-
-        .input-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #f2f3f5;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-        }
-
-        .modal-input {
-            width: 100%;
-            background: linear-gradient(145deg, #1e1f23 0%, #16171a 100%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #f2f3f5;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 400;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .modal-input:focus {
-            outline: none;
-            border-color: #5865f2;
-            box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-        }
-
-        .modal-button {
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            font-family: inherit;
-        }
-
-        .modal-button.primary {
-            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
-            color: white;
-            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
-        }
-
-        .modal-button.primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(88, 101, 242, 0.5);
-        }
-
-        .modal-button.secondary {
-            background: transparent;
-            color: #f2f3f5;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .modal-button.secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .status-bar {
-            height: 60px;
-            background: linear-gradient(145deg, #232428 0%, #1e1f23 100%);
-            display: flex;
-            align-items: center;
-            padding: 0 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            flex: 1;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .user-info:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .user-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 14px;
-            margin-right: 12px;
-            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
-        }
-
-        .username {
-            font-size: 14px;
-            font-weight: 600;
-            color: #f2f3f5;
-        }
-
-        .user-status {
+        .typing-indicator {
+            padding: 10px 20px;
             font-size: 12px;
-            color: #949ba4;
-            font-weight: 500;
+            color: #666;
+            font-style: italic;
+            background: rgba(79, 172, 254, 0.1);
+            margin: 10px 20px;
+            border-radius: 15px;
+            display: none;
         }
 
         .system-message {
             text-align: center;
-            color: #80848e;
-            font-size: 14px;
-            font-weight: 500;
-            margin: 20px 0;
+            color: #666;
+            font-size: 12px;
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 15px;
             font-style: italic;
-            padding: 12px 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            margin: 16px 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .welcome-message {
-            text-align: center;
-            padding: 40px 20px;
-            color: #949ba4;
+        /* Custom scrollbar */
+        .messages-container::-webkit-scrollbar {
+            width: 6px;
         }
 
-        .welcome-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .messages-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
         }
 
-        .welcome-subtitle {
-            font-size: 16px;
-            margin-bottom: 24px;
+        .messages-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
         }
 
-        .join-server-btn {
-            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
-            color: white;
-            border: none;
-            padding: 12px 32px;
-            border-radius: 25px;
-            font-weight: 600;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
+        .messages-container::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
         }
 
-        .join-server-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(88, 101, 242, 0.5);
-        }
-
-        .firebase-setup {
-            background: rgba(255, 165, 0, 0.1);
-            border: 1px solid rgba(255, 165, 0, 0.3);
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 24px;
-            color: #ffa500;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        .firebase-setup strong {
-            color: #ffb84d;
-        }
-
-        .user-colors {
-            --color-1: #ff6b6b;
-            --color-2: #4ecdc4;
-            --color-3: #45b7d1;
-            --color-4: #96ceb4;
-            --color-5: #ffeaa7;
-            --color-6: #dda0dd;
-            --color-7: #98d8c8;
-            --color-8: #a8e6cf;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 240px;
+        @media (max-width: 600px) {
+            .chat-container {
+                width: 95%;
+                height: 95vh;
+                border-radius: 15px;
             }
-            
-            .server-list {
-                width: 60px;
-            }
-            
-            .modal-content {
-                padding: 24px;
-                width: 95vw;
-            }
-        }
 
-        .hidden {
-            display: none !important;
+            .message {
+                max-width: 85%;
+            }
+
+            .username-setup {
+                padding: 30px 20px;
+            }
+
+            .username-setup h2 {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Server List -->
-        <div class="server-list">
-            <div class="server-icon active" title="Lyla Testing #1">
-                LT
-            </div>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🌍 Global Chat Room</h1>
+            <div class="online-count"><span id="onlineCount">0</span> users online</div>
         </div>
 
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="server-header">
-                Lyla Testing #1
-            </div>
-            
-            <div class="channels-container">
-                <div class="channel-category">Text Channels</div>
-                <div class="channel active">
-                    <span class="channel-icon">#</span>
-                    <span>general</span>
-                    <span class="online-users" id="onlineCount">0</span>
-                </div>
-                <div class="channel">
-                    <span class="channel-icon">#</span>
-                    <span>random</span>
-                </div>
-
-                <div class="channel-category">Voice Channels</div>
-                <div class="channel">
-                    <span class="channel-icon">🔊</span>
-                    <span>General</span>
-                </div>
-                <div class="channel">
-                    <span class="channel-icon">🔊</span>
-                    <span>Music</span>
-                </div>
-            </div>
-
-            <div class="status-bar">
-                <div class="user-info">
-                    <div class="user-avatar" id="userAvatar">?</div>
-                    <div class="user-details">
-                        <div class="username" id="displayUsername">Guest User</div>
-                        <div class="user-status" id="userStatus">Click to set username</div>
-                    </div>
-                </div>
-            </div>
+        <!-- Username Setup Screen -->
+        <div class="username-setup" id="usernameSetup">
+            <h2>Welcome to Global Chat!</h2>
+            <p>Enter your username to join the conversation</p>
+            <input type="text" class="username-input" id="usernameInput" placeholder="Enter your username..." maxlength="20">
+            <button class="join-btn" id="joinBtn">Join Chat</button>
         </div>
 
-        <!-- Main Chat Area -->
-        <div class="chat-area">
-            <div class="chat-header">
-                <span class="channel-icon">#</span>
-                <span class="chat-title">general</span>
-                <span class="channel-topic">• Welcome to Lyla Testing #1</span>
-                <div class="server-info">
-                    <div class="connection-status" id="connectionStatus">
-                        <div class="status-dot"></div>
-                        <span>Connecting...</span>
-                    </div>
-                    <div class="online-count">
-                        <span id="totalOnline">0</span> Online
-                    </div>
-                    <div class="server-id" onclick="copyServerId()" title="Click to copy server ID">
-                        Server: <span id="serverIdText">LYLA01</span>
-                    </div>
-                </div>
-            </div>
-
+        <!-- Main Chat Interface -->
+        <div class="chat-main" id="chatMain">
             <div class="messages-container" id="messagesContainer">
-                <div class="welcome-message" id="welcomeMessage">
-                    <div class="welcome-title">🚀 Welcome to Lyla Testing #1!</div>
-                    <div class="welcome-subtitle">This is a live chat server with real-time sync across all devices!</div>
-                    <button class="join-server-btn" onclick="showJoinModal()">Set Username</button>
-                </div>
+                <!-- Messages will appear here -->
             </div>
-
-            <div class="message-input-container">
-                <div class="message-input-wrapper">
-                    <input type="text" class="message-input" id="messageInput" 
-                           placeholder="Set your username first..." disabled>
-                    <button class="send-button" id="sendButton" disabled>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
-                        </svg>
-                    </button>
-                </div>
+            <div class="typing-indicator" id="typingIndicator">
+                Someone is typing...
+            </div>
+            <div class="input-container">
+                <input type="text" class="message-input" id="messageInput" placeholder="Type your message..." maxlength="500">
+                <button class="send-btn" id="sendBtn">Send</button>
             </div>
         </div>
     </div>
-
-    <!-- Join Modal -->
-    <div class="join-modal hidden" id="joinModal">
-        <div class="modal-content">
-            <div class="firebase-setup">
-                <strong>✅ Firebase Status</strong><br>
-                <span id="firebaseStatus">Checking Firebase connection...</span>
-            </div>
-            
-            <div class="modal-header">🎮 Join the Server</div>
-            <div class="modal-description">Choose your username to start chatting in Lyla Testing #1</div>
-            
-            <div class="input-group">
-                <label class="input-label">Username</label>
-                <input type="text" class="modal-input" id="usernameInput" placeholder="Enter your display name">
-            </div>
-            
-            <div class="modal-buttons">
-                <button class="modal-button primary" onclick="joinServer()">Join Server</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Firebase SDK v8 (Compat) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-database.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-auth.min.js"></script>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAgtHnNckPl-zY94sUMKYGG57tS-Qr4oMw",
-            authDomain: "chatapp-27b81.firebaseapp.com",
-            databaseURL: "https://chatapp-27b81-default-rtdb.europe-west1.firebasedatabase.app/",
-            projectId: "chatapp-27b81",
-            storageBucket: "chatapp-27b81.appspot.com",
-            messagingSenderId: "787626167817",
-            appId: "1:787626167817:web:f32b6294fab3a6385532d8"
-        };
-
-        class LylaServer {
+        class GlobalChat {
             constructor() {
                 this.username = '';
-                this.userId = this.generateUserId();
-                this.serverId = 'LYLA01';
-                this.userColors = [
-                    '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', 
-                    '#ffeaa7', '#dda0dd', '#98d8c8', '#a8e6cf'
-                ];
-                this.userColorMap = new Map();
-                this.isJoined = false;
-                this.isConnected = false;
-                this.connectionRetries = 0;
-                this.maxRetries = 5;
+                this.messages = [];
+                this.users = new Set();
+                this.isTyping = false;
+                this.typingTimeout = null;
                 
-                this.initFirebase();
+                this.initializeElements();
                 this.setupEventListeners();
-                this.updateUI();
-                this.startHeartbeat();
+                this.simulateOnlineUsers();
+                this.startPeriodicUpdates();
             }
 
-            generateUserId() {
-                return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            }
-
-            async initFirebase() {
-                try {
-                    // Initialize Firebase with v8 SDK
-                    firebase.initializeApp(firebaseConfig);
-                    this.database = firebase.database();
-                    
-                    // Simple test to see if we can write to the database
-                    const testRef = this.database.ref(`servers/${this.serverId}/connectionTest`);
-                    const testData = {
-                        timestamp: Date.now(),
-                        userId: this.userId,
-                        test: true
-                    };
-                    
-                    // Test write with timeout
-                    await Promise.race([
-                        testRef.set(testData),
-                        new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Connection timeout')), 8000)
-                        )
-                    ]);
-                    
-                    // Clean up test data
-                    await testRef.remove();
-                    
-                    // If we got here, Firebase is working
-                    this.setupFirebaseListeners();
-                    this.setConnectionStatus('connected', 'Connected to Firebase');
-                    this.updateFirebaseStatus('✅ Connected to Firebase - Real-time sync enabled!');
-                    this.isConnected = true;
-                    this.connectionRetries = 0;
-                    
-                } catch (error) {
-                    console.error('Firebase initialization failed:', error);
-                    
-                    // Determine the type of error and show appropriate message
-                    let errorMessage = '⚠️ Firebase connection failed - Using offline mode';
-                    
-                    if (error.code === 'PERMISSION_DENIED') {
-                        errorMessage = '⚠️ Firebase database rules deny access - Using offline mode';
-                        console.warn('Firebase security rules are blocking writes. Database rules need to be configured.');
-                    } else if (error.message?.includes('timeout')) {
-                        errorMessage = '⚠️ Firebase connection timeout - Using offline mode';
-                    } else if (error.message?.includes('network')) {
-                        errorMessage = '⚠️ Network error - Using offline mode';
-                    }
-                    
-                    this.updateFirebaseStatus(errorMessage);
-                    this.setConnectionStatus('disconnected', 'Offline mode');
-                    this.startDemoMode();
-                }
-            }
-
-            updateFirebaseStatus(message) {
-                const statusElement = document.getElementById('firebaseStatus');
-                if (statusElement) {
-                    statusElement.textContent = message;
-                }
-            }
-
-            startDemoMode() {
-                console.log('Starting demo mode with localStorage fallback');
-                this.isConnected = false;
-                this.loadMessagesFromStorage();
-                this.loadUsersFromStorage();
-                this.setupStorageSync();
-                this.setConnectionStatus('disconnected', 'Offline mode');
-            }
-
-            setupFirebaseListeners() {
-                if (!this.isConnected || !this.database) return;
-
-                try {
-                    // Listen for connection status (optional - for monitoring)
-                    this.database.ref('.info/connected').on('value', (snapshot) => {
-                        if (snapshot.val() === false) {
-                            console.log('Firebase disconnected, switching to offline mode');
-                            this.setConnectionStatus('connecting', 'Reconnecting...');
-                        }
-                    }, (error) => {
-                        console.warn('Connection monitoring failed:', error);
-                        // Don't fail the entire setup for this
-                    });
-
-                    // Listen for new messages
-                    this.database.ref(`servers/${this.serverId}/messages`).on('child_added', (snapshot) => {
-                        const messageData = snapshot.val();
-                        if (messageData && messageData.userId !== this.userId) {
-                            this.displayMessage(messageData);
-                        }
-                    }, (error) => {
-                        console.error('Failed to listen for messages:', error);
-                        this.isConnected = false;
-                        this.setConnectionStatus('disconnected', 'Firebase error - offline mode');
-                    });
-
-                    // Listen for users
-                    this.database.ref(`servers/${this.serverId}/users`).on('value', (snapshot) => {
-                        const users = snapshot.val() || {};
-                        this.updateOnlineUsers(users);
-                    }, (error) => {
-                        console.error('Failed to listen for users:', error);
-                        // Don't disable Firebase for user list errors
-                    });
-
-                    // Listen for system messages
-                    this.database.ref(`servers/${this.serverId}/systemMessages`).on('child_added', (snapshot) => {
-                        const messageData = snapshot.val();
-                        if (messageData && messageData.userId !== this.userId) {
-                            this.displaySystemMessage(messageData.content);
-                        }
-                    }, (error) => {
-                        console.error('Failed to listen for system messages:', error);
-                        // Don't disable Firebase for system message errors
-                    });
-                    
-                } catch (error) {
-                    console.error('Failed to setup Firebase listeners:', error);
-                    this.isConnected = false;
-                    this.setConnectionStatus('disconnected', 'Firebase setup failed');
-                    this.startDemoMode();
-                }
-            }
-
-            setupStorageSync() {
-                // Fallback to localStorage polling for demo mode
-                setInterval(() => {
-                    if (!this.isConnected) {
-                        this.loadMessagesFromStorage();
-                        this.loadUsersFromStorage();
-                    }
-                }, 2000);
-            }
-
-            async attemptReconnection() {
-                if (this.connectionRetries >= this.maxRetries) {
-                    this.setConnectionStatus('disconnected', 'Connection failed');
-                    this.startDemoMode();
-                    return;
-                }
-
-                this.connectionRetries++;
-                this.setConnectionStatus('connecting', `Reconnecting... (${this.connectionRetries}/${this.maxRetries})`);
-                
-                setTimeout(() => {
-                    if (!this.isConnected) {
-                        this.initFirebase();
-                    }
-                }, 2000 * this.connectionRetries);
-            }
-
-            setConnectionStatus(status, message) {
-                const statusElement = document.getElementById('connectionStatus');
-                const statusDot = statusElement.querySelector('.status-dot');
-                const statusText = statusElement.querySelector('span');
-                
-                statusElement.className = `connection-status ${status}`;
-                statusText.textContent = message;
-                
-                if (status === 'connected') {
-                    statusDot.style.animation = 'none';
-                } else {
-                    statusDot.style.animation = 'pulse 2s infinite';
-                }
+            initializeElements() {
+                this.usernameSetup = document.getElementById('usernameSetup');
+                this.chatMain = document.getElementById('chatMain');
+                this.usernameInput = document.getElementById('usernameInput');
+                this.joinBtn = document.getElementById('joinBtn');
+                this.messagesContainer = document.getElementById('messagesContainer');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.onlineCount = document.getElementById('onlineCount');
+                this.typingIndicator = document.getElementById('typingIndicator');
             }
 
             setupEventListeners() {
-                document.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        if (e.target.id === 'messageInput' && this.isJoined) {
-                            this.sendMessage();
-                        } else if (e.target.id === 'usernameInput') {
-                            joinServer();
-                        }
-                    }
+                this.joinBtn.addEventListener('click', () => this.joinChat());
+                this.usernameInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.joinChat();
+                });
+                this.usernameInput.addEventListener('input', () => {
+                    this.joinBtn.disabled = this.usernameInput.value.trim().length < 2;
                 });
 
-                document.getElementById('sendButton').onclick = () => this.sendMessage();
-                
-                // User info click to change username
-                document.querySelector('.user-info').onclick = () => {
-                    if (this.isJoined) {
-                        showJoinModal();
-                    }
-                };
-
-                // Handle page visibility for user presence
-                document.addEventListener('visibilitychange', () => {
-                    if (!document.hidden && this.isJoined) {
-                        this.updateUserPresence();
-                    }
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.sendMessage();
                 });
 
-                // Handle page unload
-                window.addEventListener('beforeunload', () => {
-                    if (this.isJoined) {
-                        this.leaveServer();
-                    }
+                this.messageInput.addEventListener('input', () => {
+                    this.handleTyping();
                 });
             }
 
-            async joinServer() {
-                const username = document.getElementById('usernameInput').value.trim();
-                
-                if (!username) {
-                    alert('Please enter a username!');
-                    return;
-                }
+            joinChat() {
+                const username = this.usernameInput.value.trim();
+                if (username.length < 2) return;
 
-                // If changing username, announce it
-                if (this.isJoined && this.username !== username) {
-                    await this.sendSystemMessage(`${this.username} changed their name to ${username}`);
-                    await this.removeUserPresence();
-                }
-
-                const wasJoined = this.isJoined;
                 this.username = username;
-                this.isJoined = true;
+                this.users.add(username);
+                this.updateOnlineCount();
                 
-                // Update user presence
-                await this.updateUserPresence();
+                this.usernameSetup.style.display = 'none';
+                this.chatMain.style.display = 'flex';
                 
-                // Hide welcome message and modal
-                document.getElementById('welcomeMessage').classList.add('hidden');
-                document.getElementById('joinModal').classList.add('hidden');
+                this.addSystemMessage(`${username} joined the chat`);
+                this.messageInput.focus();
                 
-                // Show join message for new users
-                if (!wasJoined) {
-                    await this.sendSystemMessage(`🎉 ${username} joined the server!`);
-                }
-                
-                this.updateUI();
-            }
-
-            async sendMessage() {
-                if (!this.isJoined) return;
-                
-                const input = document.getElementById('messageInput');
-                const message = input.value.trim();
-                
-                if (!message) return;
-
-                const messageData = {
-                    id: Date.now() + Math.random(),
-                    userId: this.userId,
-                    username: this.username,
-                    content: message,
-                    timestamp: Date.now(),
-                    color: this.getUserColor(this.username)
-                };
-
-                // Display immediately for sender
-                this.displayMessage(messageData);
-                
-                // Send to Firebase or localStorage
-                if (this.isConnected && this.database) {
-                    try {
-                        await this.database.ref(`servers/${this.serverId}/messages`).push(messageData);
-                    } catch (error) {
-                        console.error('Failed to send message to Firebase:', error);
-                        // If Firebase fails, fall back to localStorage and disable Firebase
-                        this.isConnected = false;
-                        this.setConnectionStatus('disconnected', 'Firebase error - offline mode');
-                        this.updateFirebaseStatus('⚠️ Firebase write failed - Using offline mode');
-                        this.saveMessageToStorage(messageData);
-                    }
-                } else {
-                    this.saveMessageToStorage(messageData);
-                }
-                
-                input.value = '';
-            }
-
-            displayMessage(messageData) {
-                const container = document.getElementById('messagesContainer');
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message';
-                
-                const time = new Date(messageData.timestamp);
-                const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                messageDiv.innerHTML = `
-                    <div class="message-header">
-                        <span class="message-author" style="color: ${messageData.color || this.getUserColor(messageData.username)}">${this.escapeHtml(messageData.username)}</span>
-                        <span class="message-timestamp">${timeString}</span>
-                    </div>
-                    <div class="message-content">${this.escapeHtml(messageData.content)}</div>
-                `;
-
-                container.appendChild(messageDiv);
-                this.scrollToBottom(container);
-
-                // Add smooth animation
-                this.animateMessage(messageDiv);
-            }
-
-            displaySystemMessage(message) {
-                const container = document.getElementById('messagesContainer');
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'system-message';
-                messageDiv.textContent = message;
-                
-                container.appendChild(messageDiv);
-                this.scrollToBottom(container);
-                this.animateMessage(messageDiv);
-            }
-
-            animateMessage(messageDiv) {
-                messageDiv.style.opacity = '0';
-                messageDiv.style.transform = 'translateY(20px)';
-                requestAnimationFrame(() => {
-                    messageDiv.style.transition = 'all 0.3s ease';
-                    messageDiv.style.opacity = '1';
-                    messageDiv.style.transform = 'translateY(0)';
-                });
-            }
-
-            scrollToBottom(container) {
+                // Add some welcome messages
                 setTimeout(() => {
-                    container.scrollTop = container.scrollHeight;
-                }, 50);
+                    this.addMessage('ChatBot', 'Welcome to Global Chat! 🎉', false);
+                }, 500);
             }
 
-            async sendSystemMessage(message) {
-                const messageData = {
+            sendMessage() {
+                const content = this.messageInput.value.trim();
+                if (!content) return;
+
+                this.addMessage(this.username, content, true);
+                this.messageInput.value = '';
+                this.sendBtn.disabled = true;
+                
+                setTimeout(() => {
+                    this.sendBtn.disabled = false;
+                }, 500);
+
+                // Simulate responses from other users occasionally
+                if (Math.random() < 0.3) {
+                    setTimeout(() => {
+                        this.simulateOtherUserMessage();
+                    }, 1000 + Math.random() * 3000);
+                }
+            }
+
+            addMessage(username, content, isOwn) {
+                const message = {
                     id: Date.now() + Math.random(),
-                    userId: this.userId,
-                    content: message,
-                    timestamp: Date.now(),
-                    type: 'system'
+                    username,
+                    content,
+                    timestamp: new Date(),
+                    isOwn
                 };
-
-                // Display immediately
-                this.displaySystemMessage(message);
                 
-                // Send to Firebase or localStorage
-                if (this.isConnected && this.database) {
-                    try {
-                        await this.database.ref(`servers/${this.serverId}/systemMessages`).push(messageData);
-                    } catch (error) {
-                        console.error('Failed to send system message:', error);
-                        // If Firebase fails, fall back to localStorage and disable Firebase
-                        this.isConnected = false;
-                        this.setConnectionStatus('disconnected', 'Firebase error - offline mode');
-                        this.updateFirebaseStatus('⚠️ Firebase write failed - Using offline mode');
-                        this.saveSystemMessageToStorage(messageData);
-                    }
-                } else {
-                    this.saveSystemMessageToStorage(messageData);
-                }
+                this.messages.push(message);
+                this.renderMessage(message);
+                this.scrollToBottom();
             }
 
-            async updateUserPresence() {
-                if (!this.isJoined) return;
-
-                const userData = {
-                    username: this.username,
-                    color: this.getUserColor(this.username),
-                    lastSeen: Date.now(),
-                    userId: this.userId
-                };
-
-                if (this.isConnected && this.database) {
-                    try {
-                        const userRef = this.database.ref(`servers/${this.serverId}/users/${this.userId}`);
-                        await userRef.set(userData);
-                        // Remove user when they disconnect
-                        userRef.onDisconnect().remove();
-                    } catch (error) {
-                        console.error('Failed to update presence:', error);
-                        // If Firebase fails, fall back to localStorage and disable Firebase
-                        this.isConnected = false;
-                        this.setConnectionStatus('disconnected', 'Firebase error - offline mode');
-                        this.updateFirebaseStatus('⚠️ Firebase write failed - Using offline mode');
-                        this.saveUserToStorage(userData);
-                    }
-                } else {
-                    this.saveUserToStorage(userData);
-                }
-            }
-
-            async removeUserPresence() {
-                if (this.isConnected && this.database) {
-                    try {
-                        await this.database.ref(`servers/${this.serverId}/users/${this.userId}`).remove();
-                    } catch (error) {
-                        console.error('Failed to remove presence:', error);
-                        // If Firebase fails, don't crash - just use localStorage
-                        this.isConnected = false;
-                    }
-                }
-                this.removeUserFromStorage();
-            }
-
-            async leaveServer() {
-                if (this.isJoined) {
-                    await this.sendSystemMessage(`👋 ${this.username} left the server`);
-                    await this.removeUserPresence();
-                }
-            }
-
-            updateOnlineUsers(users) {
-                const userCount = Object.keys(users).length;
-                document.getElementById('onlineCount').textContent = userCount;
-                document.getElementById('totalOnline').textContent = userCount;
-            }
-
-            startHeartbeat() {
-                // Update user presence every 30 seconds
-                setInterval(() => {
-                    if (this.isJoined) {
-                        this.updateUserPresence();
-                    }
-                }, 30000);
-            }
-
-            // Storage fallback methods
-            saveMessageToStorage(messageData) {
-                const messages = this.getStoredMessages();
-                messages.push(messageData);
-                if (messages.length > 100) {
-                    messages.splice(0, messages.length - 100);
-                }
-                localStorage.setItem(`lyla-messages-${this.serverId}`, JSON.stringify(messages));
-            }
-
-            saveSystemMessageToStorage(messageData) {
-                const messages = this.getStoredMessages();
-                messages.push(messageData);
-                if (messages.length > 100) {
-                    messages.splice(0, messages.length - 100);
-                }
-                localStorage.setItem(`lyla-messages-${this.serverId}`, JSON.stringify(messages));
-            }
-
-            getStoredMessages() {
-                const stored = localStorage.getItem(`lyla-messages-${this.serverId}`);
-                return stored ? JSON.parse(stored) : [];
-            }
-
-            loadMessagesFromStorage() {
-                const messages = this.getStoredMessages();
-                const container = document.getElementById('messagesContainer');
+            renderMessage(message) {
+                const messageEl = document.createElement('div');
+                messageEl.className = `message ${message.isOwn ? 'own' : 'other'}`;
                 
-                // Clear existing messages except welcome
-                const existingMessages = container.querySelectorAll('.message, .system-message');
-                existingMessages.forEach(msg => msg.remove());
-                
-                messages.forEach(messageData => {
-                    if (messageData.type === 'system') {
-                        this.displaySystemMessage(messageData.content);
-                    } else {
-                        this.displayMessage(messageData);
-                    }
+                const time = message.timestamp.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
                 });
+                
+                messageEl.innerHTML = `
+                    <div class="message-header">${message.username}</div>
+                    <div class="message-content">${this.escapeHtml(message.content)}</div>
+                    <div class="message-time">${time}</div>
+                `;
+                
+                this.messagesContainer.appendChild(messageEl);
             }
 
-            saveUserToStorage(userData) {
-                const users = this.getStoredUsers();
-                users[this.userId] = userData;
-                localStorage.setItem(`lyla-users-${this.serverId}`, JSON.stringify({
-                    users: users,
-                    timestamp: Date.now()
-                }));
-                this.updateOnlineUsers(users);
+            addSystemMessage(content) {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'system-message';
+                messageEl.textContent = content;
+                this.messagesContainer.appendChild(messageEl);
+                this.scrollToBottom();
             }
 
-            removeUserFromStorage() {
-                const users = this.getStoredUsers();
-                delete users[this.userId];
-                localStorage.setItem(`lyla-users-${this.serverId}`, JSON.stringify({
-                    users: users,
-                    timestamp: Date.now()
-                }));
-                this.updateOnlineUsers(users);
+            simulateOtherUserMessage() {
+                const responses = [
+                    "Hey everyone! 👋",
+                    "How's everyone doing today?",
+                    "Nice to meet you all!",
+                    "Anyone here from Europe?",
+                    "This chat is pretty cool!",
+                    "What's your favorite hobby?",
+                    "Beautiful weather today ☀️",
+                    "Anyone watching any good shows lately?",
+                    "Hope everyone's having a great day!",
+                    "Just joined, what did I miss?",
+                    "Coffee or tea? ☕",
+                    "Working from home today 💻",
+                    "Can't believe it's already this late!",
+                    "Love connecting with people from around the world 🌍"
+                ];
+                
+                const names = ['Alex', 'Jordan', 'Sam', 'Taylor', 'Casey', 'Morgan', 'Riley', 'Avery', 'Quinn', 'Sage'];
+                const randomName = names[Math.floor(Math.random() * names.length)];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                
+                this.users.add(randomName);
+                this.updateOnlineCount();
+                this.addMessage(randomName, randomResponse, false);
             }
 
-            getStoredUsers() {
-                const stored = localStorage.getItem(`lyla-users-${this.serverId}`);
-                if (stored) {
-                    const data = JSON.parse(stored);
-                    // Clean up old users (older than 2 minutes)
-                    const now = Date.now();
-                    const cleanUsers = {};
-                    Object.entries(data.users || {}).forEach(([userId, userData]) => {
-                        if (now - userData.lastSeen < 120000) {
-                            cleanUsers[userId] = userData;
+            handleTyping() {
+                if (!this.isTyping) {
+                    this.isTyping = true;
+                    this.showTypingIndicator();
+                }
+                
+                clearTimeout(this.typingTimeout);
+                this.typingTimeout = setTimeout(() => {
+                    this.isTyping = false;
+                    this.hideTypingIndicator();
+                }, 2000);
+            }
+
+            showTypingIndicator() {
+                this.typingIndicator.style.display = 'block';
+                this.scrollToBottom();
+            }
+
+            hideTypingIndicator() {
+                this.typingIndicator.style.display = 'none';
+            }
+
+            simulateOnlineUsers() {
+                // Add some initial users
+                const initialUsers = ['Emma', 'Liam', 'Olivia', 'Noah', 'Ava'];
+                initialUsers.forEach(user => this.users.add(user));
+                this.updateOnlineCount();
+            }
+
+            updateOnlineCount() {
+                this.onlineCount.textContent = this.users.size;
+            }
+
+            startPeriodicUpdates() {
+                // Simulate users joining/leaving occasionally
+                setInterval(() => {
+                    if (Math.random() < 0.2) {
+                        const names = ['Chris', 'Pat', 'Drew', 'Blake', 'Reese', 'Phoenix', 'River', 'Skyler'];
+                        const randomName = names[Math.floor(Math.random() * names.length)];
+                        
+                        if (!this.users.has(randomName)) {
+                            this.users.add(randomName);
+                            this.addSystemMessage(`${randomName} joined the chat`);
+                            this.updateOnlineCount();
                         }
-                    });
-                    return cleanUsers;
-                }
-                return {};
-            }
-
-            loadUsersFromStorage() {
-                const users = this.getStoredUsers();
-                this.updateOnlineUsers(users);
-            }
-
-            getUserColor(username) {
-                if (!this.userColorMap.has(username)) {
-                    const colorIndex = Array.from(this.userColorMap.keys()).length % this.userColors.length;
-                    this.userColorMap.set(username, this.userColors[colorIndex]);
-                }
-                return this.userColorMap.get(username);
-            }
-
-            updateUI() {
-                const messageInput = document.getElementById('messageInput');
-                const sendButton = document.getElementById('sendButton');
-                const displayUsername = document.getElementById('displayUsername');
-                const userAvatar = document.getElementById('userAvatar');
-                const userStatus = document.getElementById('userStatus');
-
-                if (this.isJoined) {
-                    displayUsername.textContent = this.username;
-                    userAvatar.textContent = this.username.charAt(0).toUpperCase();
-                    userStatus.textContent = this.isConnected ? `Online in ${this.serverId}` : `Offline in ${this.serverId}`;
-                    messageInput.disabled = false;
-                    sendButton.disabled = false;
-                    messageInput.placeholder = 'Message #general';
+                    }
                     
-                    // Set user avatar color
-                    userAvatar.style.background = `linear-gradient(135deg, ${this.getUserColor(this.username)}, ${this.getUserColor(this.username)}dd)`;
-                } else {
-                    displayUsername.textContent = 'Guest User';
-                    userAvatar.textContent = '?';
-                    userStatus.textContent = 'Click to set username';
-                    messageInput.disabled = true;
-                    sendButton.disabled = true;
-                    messageInput.placeholder = 'Set your username first...';
-                }
+                    if (Math.random() < 0.1 && this.users.size > 3) {
+                        const usersArray = Array.from(this.users);
+                        const randomUser = usersArray[Math.floor(Math.random() * usersArray.length)];
+                        if (randomUser !== this.username) {
+                            this.users.delete(randomUser);
+                            this.addSystemMessage(`${randomUser} left the chat`);
+                            this.updateOnlineCount();
+                        }
+                    }
+                }, 10000);
+            }
+
+            scrollToBottom() {
+                setTimeout(() => {
+                    this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+                }, 100);
             }
 
             escapeHtml(text) {
@@ -1477,56 +550,10 @@
             }
         }
 
-        // Global server instance
-        let server = new LylaServer();
-
-        // Global functions
-        function showJoinModal() {
-            document.getElementById('joinModal').classList.remove('hidden');
-            document.getElementById('usernameInput').focus();
-            
-            // Pre-fill with current username if changing
-            if (server.isJoined) {
-                document.getElementById('usernameInput').value = server.username;
-            }
-        }
-
-        function hideJoinModal() {
-            document.getElementById('joinModal').classList.add('hidden');
-        }
-
-        function joinServer() {
-            server.joinServer();
-        }
-
-        function copyServerId() {
-            const serverId = document.getElementById('serverIdText').textContent;
-            navigator.clipboard.writeText(serverId).then(() => {
-                // Visual feedback
-                const element = document.getElementById('serverIdText');
-                const originalText = element.textContent;
-                element.textContent = 'Copied!';
-                setTimeout(() => {
-                    element.textContent = originalText;
-                }, 1500);
-            }).catch(() => {
-                alert(`Server ID: ${serverId}`);
-            });
-        }
-
-        // Modal click outside to close
-        document.getElementById('joinModal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) {
-                hideJoinModal();
-            }
+        // Initialize the chat when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new GlobalChat();
         });
-
-        // Auto-show join modal on load
-        setTimeout(() => {
-            if (!server.isJoined) {
-                showJoinModal();
-            }
-        }, 1000);
     </script>
 </body>
 </html>
