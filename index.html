@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Chat • Discord</title>
+    <title>Global Chat • Discord Style</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Whitney:wght@400;500;600;700&display=swap');
 
@@ -172,6 +172,8 @@
             display: flex;
             flex-direction: column;
             background: #36393f;
+            height: 100vh; /* Force full height */
+            overflow: hidden; /* Prevent overflow */
         }
 
         .chat-header {
@@ -359,13 +361,17 @@
             overflow: hidden;
             position: relative;
             min-height: 0; /* Important for flex child to shrink */
+            display: flex;
+            flex-direction: column;
         }
 
         .messages-container {
-            height: 100%;
+            flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 16px 16px 0 16px;
             box-sizing: border-box;
+            min-height: 0; /* Important for flex scrolling */
         }
 
         .message-group {
@@ -770,7 +776,7 @@
             </div>
 
             <!-- Chat Interface -->
-            <div style="display: none;" id="chatInterface">
+            <div style="display: none; height: 100vh; overflow: hidden;" id="chatInterface">
                 <div class="chat-header">
                     <div class="channel-info">
                         <span class="channel-icon">#</span>
@@ -1029,7 +1035,8 @@
                     onDisconnect(this.usersRef).remove();
 
                     this.usernameSetup.style.display = 'none';
-                    this.chatInterface.style.display = 'block';
+                    this.chatInterface.style.display = 'flex';
+                    this.chatInterface.style.flexDirection = 'column';
                     
                     this.setupMessageListener();
                     this.setupUserListener();
