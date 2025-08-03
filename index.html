@@ -293,6 +293,45 @@
             gap: 16px;
         }
 
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .connection-status.connected {
+            background: #00d4aa;
+            color: white;
+        }
+
+        .connection-status.connecting {
+            background: #ffa500;
+            color: white;
+        }
+
+        .connection-status.disconnected {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
         .server-id {
             background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
             color: white;
@@ -456,9 +495,14 @@
             box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
         }
 
-        .send-button:hover {
+        .send-button:hover:not(:disabled) {
             transform: scale(1.1) rotate(5deg);
             box-shadow: 0 6px 20px rgba(88, 101, 242, 0.5);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .join-modal {
@@ -692,6 +736,21 @@
             box-shadow: 0 8px 20px rgba(88, 101, 242, 0.5);
         }
 
+        .firebase-setup {
+            background: rgba(255, 165, 0, 0.1);
+            border: 1px solid rgba(255, 165, 0, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            color: #ffa500;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .firebase-setup strong {
+            color: #ffb84d;
+        }
+
         .user-colors {
             --color-1: #ff6b6b;
             --color-2: #4ecdc4;
@@ -779,8 +838,12 @@
                 <span class="chat-title">general</span>
                 <span class="channel-topic">• Welcome to Lyla Testing #1</span>
                 <div class="server-info">
+                    <div class="connection-status" id="connectionStatus">
+                        <div class="status-dot"></div>
+                        <span>Connecting...</span>
+                    </div>
                     <div class="online-count">
-                        <span id="totalOnline">1</span> Online
+                        <span id="totalOnline">0</span> Online
                     </div>
                     <div class="server-id" onclick="copyServerId()" title="Click to copy server ID">
                         Server: <span id="serverIdText">LYLA01</span>
@@ -791,7 +854,7 @@
             <div class="messages-container" id="messagesContainer">
                 <div class="welcome-message" id="welcomeMessage">
                     <div class="welcome-title">🚀 Welcome to Lyla Testing #1!</div>
-                    <div class="welcome-subtitle">This is a live chat server. Set your username to start chatting!</div>
+                    <div class="welcome-subtitle">This is a live chat server with real-time sync across all devices!</div>
                     <button class="join-server-btn" onclick="showJoinModal()">Set Username</button>
                 </div>
             </div>
@@ -813,6 +876,11 @@
     <!-- Join Modal -->
     <div class="join-modal hidden" id="joinModal">
         <div class="modal-content">
+            <div class="firebase-setup">
+                <strong>⚠️ Firebase Setup Required</strong><br>
+                Replace the Firebase config in the script with your own project settings to enable real-time sync!
+            </div>
+            
             <div class="modal-header">🎮 Join the Server</div>
             <div class="modal-description">Choose your username to start chatting in Lyla Testing #1</div>
             
@@ -827,24 +895,164 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.0/firebase-database-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.0/firebase-auth-compat.min.js"></script>
+
     <script>
+        // 🔥 FIREBASE CONFIGURATION - REPLACE WITH YOUR OWN!
+        const firebaseConfig = {
+            apiKey: "AIzaSyAgtHnNckPl-zY94sUMKYGG57tS-Qr4oMw",
+            authDomain: "chatapp-27b81.firebaseapp.com",
+            databaseURL: "https://chatapp-27b81.firebaseio.com/",
+            projectId: "chatapp-27b81",
+            storageBucket: "chatapp-27b81.firebasestorage.app",
+            messagingSenderId: "787626167817",
+            appId: "1:787626167817:web:f32b6294fab3a6385532d8"
+        };
+
         class LylaServer {
             constructor() {
                 this.username = '';
+                this.userId = this.generateUserId();
                 this.serverId = 'LYLA01';
-                this.users = new Set();
                 this.userColors = [
                     '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', 
                     '#ffeaa7', '#dda0dd', '#98d8c8', '#a8e6cf'
                 ];
                 this.userColorMap = new Map();
                 this.isJoined = false;
+                this.isConnected = false;
+                this.connectionRetries = 0;
+                this.maxRetries = 5;
                 
-                this.loadMessages();
-                this.loadUsers();
+                this.initFirebase();
                 this.setupEventListeners();
-                this.startUserSync();
                 this.updateUI();
+                this.startHeartbeat();
+            }
+
+            generateUserId() {
+                return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            async initFirebase() {
+                try {
+                    // Check if config is placeholder
+                    if (firebaseConfig.apiKey === "your-api-key-here") {
+                        this.setConnectionStatus('disconnected', 'Firebase not configured');
+                        console.warn('Firebase not configured. Using demo mode.');
+                        this.startDemoMode();
+                        return;
+                    }
+
+                    // Initialize Firebase
+                    firebase.initializeApp(firebaseConfig);
+                    this.database = firebase.database();
+                    
+                    // Test connection
+                    await this.database.ref('.info/connected').once('value');
+                    
+                    this.setupFirebaseListeners();
+                    this.setConnectionStatus('connected', 'Connected to Firebase');
+                    this.isConnected = true;
+                    this.connectionRetries = 0;
+                    
+                } catch (error) {
+                    console.error('Firebase initialization failed:', error);
+                    this.setConnectionStatus('disconnected', 'Connection failed');
+                    this.startDemoMode();
+                }
+            }
+
+            startDemoMode() {
+                console.log('Starting demo mode with localStorage fallback');
+                this.isConnected = false;
+                this.loadMessagesFromStorage();
+                this.loadUsersFromStorage();
+                this.setupStorageSync();
+                this.setConnectionStatus('disconnected', 'Demo mode (no sync)');
+            }
+
+            setupFirebaseListeners() {
+                if (!this.isConnected || !this.database) return;
+
+                // Listen for connection status
+                this.database.ref('.info/connected').on('value', (snapshot) => {
+                    if (snapshot.val() === true) {
+                        this.setConnectionStatus('connected', 'Connected');
+                        this.isConnected = true;
+                        this.connectionRetries = 0;
+                    } else {
+                        this.setConnectionStatus('connecting', 'Reconnecting...');
+                        this.attemptReconnection();
+                    }
+                });
+
+                // Listen for new messages
+                this.database.ref(`servers/${this.serverId}/messages`).on('child_added', (snapshot) => {
+                    const messageData = snapshot.val();
+                    if (messageData && messageData.userId !== this.userId) {
+                        this.displayMessage(messageData);
+                    }
+                });
+
+                // Listen for users
+                this.database.ref(`servers/${this.serverId}/users`).on('value', (snapshot) => {
+                    const users = snapshot.val() || {};
+                    this.updateOnlineUsers(users);
+                });
+
+                // Listen for system messages
+                this.database.ref(`servers/${this.serverId}/systemMessages`).on('child_added', (snapshot) => {
+                    const messageData = snapshot.val();
+                    if (messageData && messageData.userId !== this.userId) {
+                        this.displaySystemMessage(messageData.content);
+                    }
+                });
+            }
+
+            setupStorageSync() {
+                // Fallback to localStorage polling for demo mode
+                setInterval(() => {
+                    if (!this.isConnected) {
+                        this.loadMessagesFromStorage();
+                        this.loadUsersFromStorage();
+                    }
+                }, 2000);
+            }
+
+            async attemptReconnection() {
+                if (this.connectionRetries >= this.maxRetries) {
+                    this.setConnectionStatus('disconnected', 'Connection failed');
+                    this.startDemoMode();
+                    return;
+                }
+
+                this.connectionRetries++;
+                this.setConnectionStatus('connecting', `Reconnecting... (${this.connectionRetries}/${this.maxRetries})`);
+                
+                setTimeout(() => {
+                    if (this.isConnected) {
+                        this.initFirebase();
+                    }
+                }, 2000 * this.connectionRetries);
+            }
+
+            setConnectionStatus(status, message) {
+                const statusElement = document.getElementById('connectionStatus');
+                const statusDot = statusElement.querySelector('.status-dot');
+                const statusText = statusElement.querySelector('span');
+                
+                statusElement.className = `connection-status ${status}`;
+                statusText.textContent = message;
+                
+                if (status === 'connected') {
+                    statusDot.style.animation = 'none';
+                } else {
+                    statusDot.style.animation = 'pulse 2s infinite';
+                }
             }
 
             setupEventListeners() {
@@ -866,9 +1074,23 @@
                         showJoinModal();
                     }
                 };
+
+                // Handle page visibility for user presence
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden && this.isJoined) {
+                        this.updateUserPresence();
+                    }
+                });
+
+                // Handle page unload
+                window.addEventListener('beforeunload', () => {
+                    if (this.isJoined) {
+                        this.leaveServer();
+                    }
+                });
             }
 
-            joinServer() {
+            async joinServer() {
                 const username = document.getElementById('usernameInput').value.trim();
                 
                 if (!username) {
@@ -878,16 +1100,16 @@
 
                 // If changing username, announce it
                 if (this.isJoined && this.username !== username) {
-                    this.addSystemMessage(`${this.username} changed their name to ${username}`);
-                    this.removeUser(this.username);
+                    await this.sendSystemMessage(`${this.username} changed their name to ${username}`);
+                    await this.removeUserPresence();
                 }
 
                 const wasJoined = this.isJoined;
                 this.username = username;
                 this.isJoined = true;
                 
-                // Add user to online list
-                this.addUser(username);
+                // Update user presence
+                await this.updateUserPresence();
                 
                 // Hide welcome message and modal
                 document.getElementById('welcomeMessage').classList.add('hidden');
@@ -895,13 +1117,13 @@
                 
                 // Show join message for new users
                 if (!wasJoined) {
-                    this.addSystemMessage(`🎉 ${username} joined the server!`);
+                    await this.sendSystemMessage(`🎉 ${username} joined the server!`);
                 }
                 
                 this.updateUI();
             }
 
-            sendMessage() {
+            async sendMessage() {
                 if (!this.isJoined) return;
                 
                 const input = document.getElementById('messageInput');
@@ -911,43 +1133,66 @@
 
                 const messageData = {
                     id: Date.now() + Math.random(),
+                    userId: this.userId,
                     username: this.username,
                     content: message,
-                    timestamp: new Date().toISOString(),
+                    timestamp: Date.now(),
                     color: this.getUserColor(this.username)
                 };
 
-                this.addMessage(messageData);
-                this.saveMessage(messageData);
+                // Display immediately for sender
+                this.displayMessage(messageData);
+                
+                // Send to Firebase or localStorage
+                if (this.isConnected && this.database) {
+                    try {
+                        await this.database.ref(`servers/${this.serverId}/messages`).push(messageData);
+                    } catch (error) {
+                        console.error('Failed to send message to Firebase:', error);
+                        this.saveMessageToStorage(messageData);
+                    }
+                } else {
+                    this.saveMessageToStorage(messageData);
+                }
+                
                 input.value = '';
             }
 
-            addMessage(messageData, isSystem = false) {
+            displayMessage(messageData) {
                 const container = document.getElementById('messagesContainer');
                 const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
                 
-                if (isSystem) {
-                    messageDiv.className = 'system-message';
-                    messageDiv.textContent = messageData;
-                } else {
-                    messageDiv.className = 'message';
-                    const time = new Date(messageData.timestamp);
-                    const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const isOwn = messageData.username === this.username;
+                const time = new Date(messageData.timestamp);
+                const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-                    messageDiv.innerHTML = `
-                        <div class="message-header">
-                            <span class="message-author" style="color: ${messageData.color || this.getUserColor(messageData.username)}">${this.escapeHtml(messageData.username)}</span>
-                            <span class="message-timestamp">${timeString}</span>
-                        </div>
-                        <div class="message-content">${this.escapeHtml(messageData.content)}</div>
-                    `;
-                }
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-author" style="color: ${messageData.color || this.getUserColor(messageData.username)}">${this.escapeHtml(messageData.username)}</span>
+                        <span class="message-timestamp">${timeString}</span>
+                    </div>
+                    <div class="message-content">${this.escapeHtml(messageData.content)}</div>
+                `;
 
                 container.appendChild(messageDiv);
-                container.scrollTop = container.scrollHeight;
+                this.scrollToBottom(container);
 
                 // Add smooth animation
+                this.animateMessage(messageDiv);
+            }
+
+            displaySystemMessage(message) {
+                const container = document.getElementById('messagesContainer');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'system-message';
+                messageDiv.textContent = message;
+                
+                container.appendChild(messageDiv);
+                this.scrollToBottom(container);
+                this.animateMessage(messageDiv);
+            }
+
+            animateMessage(messageDiv) {
                 messageDiv.style.opacity = '0';
                 messageDiv.style.transform = 'translateY(20px)';
                 requestAnimationFrame(() => {
@@ -957,38 +1202,120 @@
                 });
             }
 
-            addSystemMessage(message) {
-                this.addMessage(message, true);
-                
-                // Save system messages too
-                const messageData = {
-                    id: Date.now() + Math.random(),
-                    type: 'system',
-                    content: message,
-                    timestamp: new Date().toISOString()
-                };
-                this.saveMessage(messageData);
+            scrollToBottom(container) {
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 50);
             }
 
-            saveMessage(messageData) {
-                const messages = this.getMessages();
-                messages.push(messageData);
+            async sendSystemMessage(message) {
+                const messageData = {
+                    id: Date.now() + Math.random(),
+                    userId: this.userId,
+                    content: message,
+                    timestamp: Date.now(),
+                    type: 'system'
+                };
+
+                // Display immediately
+                this.displaySystemMessage(message);
                 
-                // Keep only last 100 messages
+                // Send to Firebase or localStorage
+                if (this.isConnected && this.database) {
+                    try {
+                        await this.database.ref(`servers/${this.serverId}/systemMessages`).push(messageData);
+                    } catch (error) {
+                        console.error('Failed to send system message:', error);
+                        this.saveSystemMessageToStorage(messageData);
+                    }
+                } else {
+                    this.saveSystemMessageToStorage(messageData);
+                }
+            }
+
+            async updateUserPresence() {
+                if (!this.isJoined) return;
+
+                const userData = {
+                    username: this.username,
+                    color: this.getUserColor(this.username),
+                    lastSeen: Date.now(),
+                    userId: this.userId
+                };
+
+                if (this.isConnected && this.database) {
+                    try {
+                        await this.database.ref(`servers/${this.serverId}/users/${this.userId}`).set(userData);
+                        // Remove user when they disconnect
+                        this.database.ref(`servers/${this.serverId}/users/${this.userId}`).onDisconnect().remove();
+                    } catch (error) {
+                        console.error('Failed to update presence:', error);
+                        this.saveUserToStorage(userData);
+                    }
+                } else {
+                    this.saveUserToStorage(userData);
+                }
+            }
+
+            async removeUserPresence() {
+                if (this.isConnected && this.database) {
+                    try {
+                        await this.database.ref(`servers/${this.serverId}/users/${this.userId}`).remove();
+                    } catch (error) {
+                        console.error('Failed to remove presence:', error);
+                    }
+                }
+                this.removeUserFromStorage();
+            }
+
+            async leaveServer() {
+                if (this.isJoined) {
+                    await this.sendSystemMessage(`👋 ${this.username} left the server`);
+                    await this.removeUserPresence();
+                }
+            }
+
+            updateOnlineUsers(users) {
+                const userCount = Object.keys(users).length;
+                document.getElementById('onlineCount').textContent = userCount;
+                document.getElementById('totalOnline').textContent = userCount;
+            }
+
+            startHeartbeat() {
+                // Update user presence every 30 seconds
+                setInterval(() => {
+                    if (this.isJoined) {
+                        this.updateUserPresence();
+                    }
+                }, 30000);
+            }
+
+            // Storage fallback methods
+            saveMessageToStorage(messageData) {
+                const messages = this.getStoredMessages();
+                messages.push(messageData);
                 if (messages.length > 100) {
                     messages.splice(0, messages.length - 100);
                 }
-                
                 localStorage.setItem(`lyla-messages-${this.serverId}`, JSON.stringify(messages));
             }
 
-            getMessages() {
+            saveSystemMessageToStorage(messageData) {
+                const messages = this.getStoredMessages();
+                messages.push(messageData);
+                if (messages.length > 100) {
+                    messages.splice(0, messages.length - 100);
+                }
+                localStorage.setItem(`lyla-messages-${this.serverId}`, JSON.stringify(messages));
+            }
+
+            getStoredMessages() {
                 const stored = localStorage.getItem(`lyla-messages-${this.serverId}`);
                 return stored ? JSON.parse(stored) : [];
             }
 
-            loadMessages() {
-                const messages = this.getMessages();
+            loadMessagesFromStorage() {
+                const messages = this.getStoredMessages();
                 const container = document.getElementById('messagesContainer');
                 
                 // Clear existing messages except welcome
@@ -997,48 +1324,53 @@
                 
                 messages.forEach(messageData => {
                     if (messageData.type === 'system') {
-                        this.addMessage(messageData.content, true);
+                        this.displaySystemMessage(messageData.content);
                     } else {
-                        this.addMessage(messageData);
+                        this.displayMessage(messageData);
                     }
                 });
             }
 
-            addUser(username) {
-                this.users.add(username);
-                this.saveUsers();
-                this.updateUserCount();
-            }
-
-            removeUser(username) {
-                this.users.delete(username);
-                this.saveUsers();
-                this.updateUserCount();
-            }
-
-            saveUsers() {
-                const usersArray = Array.from(this.users);
+            saveUserToStorage(userData) {
+                const users = this.getStoredUsers();
+                users[this.userId] = userData;
                 localStorage.setItem(`lyla-users-${this.serverId}`, JSON.stringify({
-                    users: usersArray,
+                    users: users,
                     timestamp: Date.now()
                 }));
+                this.updateOnlineUsers(users);
             }
 
-            loadUsers() {
+            removeUserFromStorage() {
+                const users = this.getStoredUsers();
+                delete users[this.userId];
+                localStorage.setItem(`lyla-users-${this.serverId}`, JSON.stringify({
+                    users: users,
+                    timestamp: Date.now()
+                }));
+                this.updateOnlineUsers(users);
+            }
+
+            getStoredUsers() {
                 const stored = localStorage.getItem(`lyla-users-${this.serverId}`);
                 if (stored) {
                     const data = JSON.parse(stored);
-                    // Only load users if data is recent (within 5 minutes)
-                    if (Date.now() - data.timestamp < 300000) {
-                        this.users = new Set(data.users);
-                    }
+                    // Clean up old users (older than 2 minutes)
+                    const now = Date.now();
+                    const cleanUsers = {};
+                    Object.entries(data.users || {}).forEach(([userId, userData]) => {
+                        if (now - userData.lastSeen < 120000) {
+                            cleanUsers[userId] = userData;
+                        }
+                    });
+                    return cleanUsers;
                 }
-                this.updateUserCount();
+                return {};
             }
 
-            updateUserCount() {
-                document.getElementById('onlineCount').textContent = this.users.size;
-                document.getElementById('totalOnline').textContent = this.users.size;
+            loadUsersFromStorage() {
+                const users = this.getStoredUsers();
+                this.updateOnlineUsers(users);
             }
 
             getUserColor(username) {
@@ -1059,7 +1391,7 @@
                 if (this.isJoined) {
                     displayUsername.textContent = this.username;
                     userAvatar.textContent = this.username.charAt(0).toUpperCase();
-                    userStatus.textContent = `Online in ${this.serverId}`;
+                    userStatus.textContent = this.isConnected ? `Online in ${this.serverId}` : `Offline in ${this.serverId}`;
                     messageInput.disabled = false;
                     sendButton.disabled = false;
                     messageInput.placeholder = 'Message #general';
@@ -1074,42 +1406,6 @@
                     sendButton.disabled = true;
                     messageInput.placeholder = 'Set your username first...';
                 }
-            }
-
-            startUserSync() {
-                // Sync users every 10 seconds
-                setInterval(() => {
-                    if (this.isJoined) {
-                        this.addUser(this.username); // Keep self in the list
-                        
-                        // Clean up old users (remove users inactive for 1 minute)
-                        const stored = localStorage.getItem(`lyla-users-${this.serverId}`);
-                        if (stored) {
-                            const data = JSON.parse(stored);
-                            if (Date.now() - data.timestamp > 60000) {
-                                // Reset user list if too old
-                                this.users.clear();
-                                this.addUser(this.username);
-                            }
-                        }
-                    }
-                }, 10000);
-
-                // Listen for new messages from other users
-                this.startMessageSync();
-            }
-
-            startMessageSync() {
-                let lastMessageCount = this.getMessages().length;
-                
-                setInterval(() => {
-                    const messages = this.getMessages();
-                    if (messages.length > lastMessageCount) {
-                        // New messages added, reload the chat
-                        this.loadMessages();
-                        lastMessageCount = messages.length;
-                    }
-                }, 2000);
             }
 
             escapeHtml(text) {
@@ -1160,20 +1456,6 @@
         document.getElementById('joinModal').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) {
                 hideJoinModal();
-            }
-        });
-
-        // Page visibility handling - update user activity
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && server.isJoined) {
-                server.addUser(server.username);
-            }
-        });
-
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', () => {
-            if (server.isJoined) {
-                server.addSystemMessage(`👋 ${server.username} left the server`);
             }
         });
 
