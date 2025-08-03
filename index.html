@@ -942,34 +942,26 @@
                     firebase.initializeApp(firebaseConfig);
                     this.database = firebase.database();
                     
-                    // Test connection and write permissions
-                    const connectedRef = this.database.ref('.info/connected');
-                    await new Promise((resolve, reject) => {
-                        const timeout = setTimeout(() => {
-                            reject(new Error('Connection timeout'));
-                        }, 5000);
-                        
-                        connectedRef.once('value', (snapshot) => {
-                            clearTimeout(timeout);
-                            if (snapshot.val()) {
-                                resolve(snapshot.val());
-                            } else {
-                                reject(new Error('Not connected'));
-                            }
-                        }, (error) => {
-                            clearTimeout(timeout);
-                            reject(error);
-                        });
-                    });
-                    
-                    // Test write permissions with a simple test
-                    const testRef = this.database.ref(`servers/${this.serverId}/test`);
-                    await testRef.set({
+                    // Simple test to see if we can write to the database
+                    const testRef = this.database.ref(`servers/${this.serverId}/connectionTest`);
+                    const testData = {
                         timestamp: Date.now(),
+                        userId: this.userId,
                         test: true
-                    });
-                    await testRef.remove(); // Clean up test data
+                    };
                     
+                    // Test write with timeout
+                    await Promise.race([
+                        testRef.set(testData),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Connection timeout')), 8000)
+                        )
+                    ]);
+                    
+                    // Clean up test data
+                    await testRef.remove();
+                    
+                    // If we got here, Firebase is working
                     this.setupFirebaseListeners();
                     this.setConnectionStatus('connected', 'Connected to Firebase');
                     this.updateFirebaseStatus('✅ Connected to Firebase - Real-time sync enabled!');
@@ -978,13 +970,21 @@
                     
                 } catch (error) {
                     console.error('Firebase initialization failed:', error);
-                    if (error.code === 'PERMISSION_DENIED' || error.message?.includes('permission')) {
-                        this.updateFirebaseStatus('⚠️ Firebase database rules deny access - Using offline mode');
+                    
+                    // Determine the type of error and show appropriate message
+                    let errorMessage = '⚠️ Firebase connection failed - Using offline mode';
+                    
+                    if (error.code === 'PERMISSION_DENIED') {
+                        errorMessage = '⚠️ Firebase database rules deny access - Using offline mode';
                         console.warn('Firebase security rules are blocking writes. Database rules need to be configured.');
-                    } else {
-                        this.updateFirebaseStatus('⚠️ Firebase connection failed - Using offline mode');
+                    } else if (error.message?.includes('timeout')) {
+                        errorMessage = '⚠️ Firebase connection timeout - Using offline mode';
+                    } else if (error.message?.includes('network')) {
+                        errorMessage = '⚠️ Network error - Using offline mode';
                     }
-                    this.setConnectionStatus('disconnected', 'Connection failed');
+                    
+                    this.updateFirebaseStatus(errorMessage);
+                    this.setConnectionStatus('disconnected', 'Offline mode');
                     this.startDemoMode();
                 }
             }
@@ -1008,39 +1008,56 @@
             setupFirebaseListeners() {
                 if (!this.isConnected || !this.database) return;
 
-                // Listen for connection status
-                this.database.ref('.info/connected').on('value', (snapshot) => {
-                    if (snapshot.val() === true) {
-                        this.setConnectionStatus('connected', 'Connected');
-                        this.isConnected = true;
-                        this.connectionRetries = 0;
-                    } else {
-                        this.setConnectionStatus('connecting', 'Reconnecting...');
-                        this.attemptReconnection();
-                    }
-                });
+                try {
+                    // Listen for connection status (optional - for monitoring)
+                    this.database.ref('.info/connected').on('value', (snapshot) => {
+                        if (snapshot.val() === false) {
+                            console.log('Firebase disconnected, switching to offline mode');
+                            this.setConnectionStatus('connecting', 'Reconnecting...');
+                        }
+                    }, (error) => {
+                        console.warn('Connection monitoring failed:', error);
+                        // Don't fail the entire setup for this
+                    });
 
-                // Listen for new messages
-                this.database.ref(`servers/${this.serverId}/messages`).on('child_added', (snapshot) => {
-                    const messageData = snapshot.val();
-                    if (messageData && messageData.userId !== this.userId) {
-                        this.displayMessage(messageData);
-                    }
-                });
+                    // Listen for new messages
+                    this.database.ref(`servers/${this.serverId}/messages`).on('child_added', (snapshot) => {
+                        const messageData = snapshot.val();
+                        if (messageData && messageData.userId !== this.userId) {
+                            this.displayMessage(messageData);
+                        }
+                    }, (error) => {
+                        console.error('Failed to listen for messages:', error);
+                        this.isConnected = false;
+                        this.setConnectionStatus('disconnected', 'Firebase error - offline mode');
+                    });
 
-                // Listen for users
-                this.database.ref(`servers/${this.serverId}/users`).on('value', (snapshot) => {
-                    const users = snapshot.val() || {};
-                    this.updateOnlineUsers(users);
-                });
+                    // Listen for users
+                    this.database.ref(`servers/${this.serverId}/users`).on('value', (snapshot) => {
+                        const users = snapshot.val() || {};
+                        this.updateOnlineUsers(users);
+                    }, (error) => {
+                        console.error('Failed to listen for users:', error);
+                        // Don't disable Firebase for user list errors
+                    });
 
-                // Listen for system messages
-                this.database.ref(`servers/${this.serverId}/systemMessages`).on('child_added', (snapshot) => {
-                    const messageData = snapshot.val();
-                    if (messageData && messageData.userId !== this.userId) {
-                        this.displaySystemMessage(messageData.content);
-                    }
-                });
+                    // Listen for system messages
+                    this.database.ref(`servers/${this.serverId}/systemMessages`).on('child_added', (snapshot) => {
+                        const messageData = snapshot.val();
+                        if (messageData && messageData.userId !== this.userId) {
+                            this.displaySystemMessage(messageData.content);
+                        }
+                    }, (error) => {
+                        console.error('Failed to listen for system messages:', error);
+                        // Don't disable Firebase for system message errors
+                    });
+                    
+                } catch (error) {
+                    console.error('Failed to setup Firebase listeners:', error);
+                    this.isConnected = false;
+                    this.setConnectionStatus('disconnected', 'Firebase setup failed');
+                    this.startDemoMode();
+                }
             }
 
             setupStorageSync() {
