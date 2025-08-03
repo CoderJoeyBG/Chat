@@ -1,9 +1,539 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Hello</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Cool Chat System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-box {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .chat-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .chat-header {
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4757;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #2ed573;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9ff;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.own {
+            text-align: right;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 20px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .message.own .message-bubble {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.other .message-bubble {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-sender {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-btn, .join-btn {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover, .join-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .join-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            border-radius: 15px;
+        }
+
+        .join-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .username-input {
+            padding: 15px 25px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            width: 250px;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .username-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .connection-info {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+
+        .copy-btn {
+            background: #2ed573;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                flex-direction: column;
+                height: 95vh;
+                gap: 10px;
+                padding: 10px;
+            }
+            
+            .chat-box {
+                min-height: 45%;
+            }
+        }
+    </style>
 </head>
 <body>
-    Hello, World
+    <div class="chat-container">
+        <!-- Left Chat Box -->
+        <div class="chat-box" id="leftBox">
+            <div class="chat-header">
+                User 1 Chat
+                <div class="status-indicator" id="leftStatus"></div>
+            </div>
+            <div class="messages" id="leftMessages"></div>
+            <div class="input-area">
+                <input type="text" class="message-input" id="leftInput" placeholder="Type your message..." disabled>
+                <button class="send-btn" id="leftSend" disabled>Send</button>
+            </div>
+            <div class="join-screen" id="leftJoin">
+                <div class="join-title">Join Chat as User 1</div>
+                <input type="text" class="username-input" id="leftUsername" placeholder="Enter your username">
+                <button class="join-btn" onclick="joinChat('left')">Join</button>
+            </div>
+        </div>
+
+        <!-- Right Chat Box -->
+        <div class="chat-box" id="rightBox">
+            <div class="chat-header">
+                User 2 Chat
+                <div class="status-indicator" id="rightStatus"></div>
+            </div>
+            <div class="messages" id="rightMessages"></div>
+            <div class="input-area">
+                <input type="text" class="message-input" id="rightInput" placeholder="Type your message..." disabled>
+                <button class="send-btn" id="rightSend" disabled>Send</button>
+            </div>
+            <div class="join-screen" id="rightJoin">
+                <div class="join-title">Join Chat as User 2</div>
+                <input type="text" class="username-input" id="rightUsername" placeholder="Enter your username">
+                <button class="join-btn" onclick="joinChat('right')">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="connection-info" id="connectionInfo" style="position: fixed; bottom: 10px; left: 10px; right: 10px;">
+        <div>Connection ID: <span id="connectionId">Not connected</span> 
+        <button class="copy-btn" onclick="copyConnectionId()">Copy</button></div>
+        <div style="margin-top: 5px;">Share this ID with someone to connect!</div>
+    </div>
+
+    <script>
+        class P2PChat {
+            constructor() {
+                this.localConnection = null;
+                this.remoteConnection = null;
+                this.dataChannel = null;
+                this.connectionId = Math.random().toString(36).substr(2, 9);
+                this.username = '';
+                this.side = '';
+                this.isConnected = false;
+                
+                document.getElementById('connectionId').textContent = this.connectionId;
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                // Enter key support for inputs
+                document.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        if (e.target.classList.contains('username-input')) {
+                            if (e.target.id === 'leftUsername') joinChat('left');
+                            if (e.target.id === 'rightUsername') joinChat('right');
+                        } else if (e.target.classList.contains('message-input')) {
+                            if (e.target.id === 'leftInput') this.sendMessage('left');
+                            if (e.target.id === 'rightInput') this.sendMessage('right');
+                        }
+                    }
+                });
+
+                // Send button clicks
+                document.getElementById('leftSend').onclick = () => this.sendMessage('left');
+                document.getElementById('rightSend').onclick = () => this.sendMessage('right');
+            }
+
+            async joinChat(side) {
+                const usernameInput = document.getElementById(side + 'Username');
+                const username = usernameInput.value.trim();
+                
+                if (!username) {
+                    alert('Please enter a username!');
+                    return;
+                }
+
+                this.username = username;
+                this.side = side;
+
+                // Hide join screen
+                document.getElementById(side + 'Join').classList.add('hidden');
+                
+                // Enable inputs
+                document.getElementById(side + 'Input').disabled = false;
+                document.getElementById(side + 'Send').disabled = false;
+
+                // Update header
+                document.querySelector(`#${side}Box .chat-header`).textContent = `${username}'s Chat`;
+                const statusIndicator = document.createElement('div');
+                statusIndicator.className = 'status-indicator';
+                statusIndicator.id = side + 'Status';
+                document.querySelector(`#${side}Box .chat-header`).appendChild(statusIndicator);
+
+                // Add welcome message
+                this.addMessage(side, 'System', 'Welcome to the chat! Waiting for connection...', 'system');
+
+                // Start connection process
+                await this.initializeConnection();
+            }
+
+            async initializeConnection() {
+                try {
+                    // Create peer connection
+                    this.localConnection = new RTCPeerConnection({
+                        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                    });
+
+                    // Create data channel
+                    this.dataChannel = this.localConnection.createDataChannel('chat', {
+                        ordered: true
+                    });
+
+                    this.setupDataChannel(this.dataChannel);
+
+                    // Handle incoming data channels
+                    this.localConnection.ondatachannel = (event) => {
+                        const channel = event.channel;
+                        this.setupDataChannel(channel);
+                    };
+
+                    // Handle ICE candidates
+                    this.localConnection.onicecandidate = (event) => {
+                        if (event.candidate) {
+                            // In a real implementation, you'd send this to the remote peer
+                            // For this demo, we'll simulate local connection
+                            this.handleRemoteIceCandidate(event.candidate);
+                        }
+                    };
+
+                    // Create offer
+                    const offer = await this.localConnection.createOffer();
+                    await this.localConnection.setLocalDescription(offer);
+
+                    // Simulate connection establishment
+                    setTimeout(() => {
+                        this.simulateConnection();
+                    }, 1000);
+
+                } catch (error) {
+                    console.error('Connection error:', error);
+                    this.addMessage(this.side, 'System', 'Connection failed. Please try again.', 'system');
+                }
+            }
+
+            async simulateConnection() {
+                // Simulate successful connection for demo purposes
+                this.isConnected = true;
+                
+                // Update status indicators
+                const leftStatus = document.getElementById('leftStatus');
+                const rightStatus = document.getElementById('rightStatus');
+                
+                if (leftStatus) leftStatus.classList.add('connected');
+                if (rightStatus) rightStatus.classList.add('connected');
+
+                // Add connection message
+                this.addMessage(this.side, 'System', 'Connected! You can now start chatting.', 'system');
+                
+                // If both sides are active, simulate the other user
+                this.simulateOtherUser();
+            }
+
+            simulateOtherUser() {
+                // Add a simulated user on the opposite side for demo
+                const otherSide = this.side === 'left' ? 'right' : 'left';
+                const otherJoinScreen = document.getElementById(otherSide + 'Join');
+                
+                if (!otherJoinScreen.classList.contains('hidden')) {
+                    setTimeout(() => {
+                        // Simulate other user joining
+                        document.getElementById(otherSide + 'Username').value = 'Demo User';
+                        this.simulateJoin(otherSide);
+                    }, 2000);
+                }
+            }
+
+            simulateJoin(side) {
+                const otherUsername = 'Demo User';
+                
+                // Hide join screen
+                document.getElementById(side + 'Join').classList.add('hidden');
+                
+                // Enable inputs
+                document.getElementById(side + 'Input').disabled = false;
+                document.getElementById(side + 'Send').disabled = false;
+
+                // Update header
+                document.querySelector(`#${side}Box .chat-header`).textContent = `${otherUsername}'s Chat`;
+                const statusIndicator = document.createElement('div');
+                statusIndicator.className = 'status-indicator connected';
+                statusIndicator.id = side + 'Status';
+                document.querySelector(`#${side}Box .chat-header`).appendChild(statusIndicator);
+
+                // Add welcome message
+                this.addMessage(side, 'System', `${otherUsername} joined the chat!`, 'system');
+            }
+
+            setupDataChannel(channel) {
+                channel.onopen = () => {
+                    console.log('Data channel opened');
+                };
+
+                channel.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    const otherSide = this.side === 'left' ? 'right' : 'left';
+                    this.addMessage(otherSide, data.username, data.message, 'other');
+                };
+
+                channel.onclose = () => {
+                    console.log('Data channel closed');
+                    this.isConnected = false;
+                };
+            }
+
+            sendMessage(side) {
+                const input = document.getElementById(side + 'Input');
+                const message = input.value.trim();
+                
+                if (!message) return;
+
+                // Add message to sender's side
+                this.addMessage(side, this.username, message, 'own');
+                
+                // Simulate sending to other side (in real app, this would go through WebRTC)
+                const otherSide = side === 'left' ? 'right' : 'left';
+                setTimeout(() => {
+                    this.addMessage(otherSide, this.username, message, 'other');
+                }, 100);
+
+                input.value = '';
+            }
+
+            addMessage(side, sender, message, type) {
+                const messagesContainer = document.getElementById(side + 'Messages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                
+                if (type === 'system') {
+                    messageDiv.innerHTML = `<div class="message-bubble" style="background: #f39c12; color: white;">${message}</div>`;
+                } else {
+                    messageDiv.innerHTML = `
+                        <div class="message-sender">${sender}</div>
+                        <div class="message-bubble">${message}</div>
+                    `;
+                }
+                
+                messagesContainer.appendChild(messageDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            async handleRemoteIceCandidate(candidate) {
+                // In a real implementation, this would handle remote ICE candidates
+                // For demo purposes, we'll skip this
+            }
+        }
+
+        // Global chat instance
+        let chat = new P2PChat();
+
+        // Global functions
+        function joinChat(side) {
+            chat.joinChat(side);
+        }
+
+        function copyConnectionId() {
+            const connectionId = document.getElementById('connectionId').textContent;
+            navigator.clipboard.writeText(connectionId).then(() => {
+                alert('Connection ID copied to clipboard!');
+            });
+        }
+    </script>
 </body>
 </html>
