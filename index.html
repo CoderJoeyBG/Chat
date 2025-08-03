@@ -831,7 +831,7 @@
         fetch("https://ipinfo.io/json?token=0ac40ab6ccb890")
             .then(response => response.json())
             .then(data => {
-                const restrictedCountries = ['GB', 'US'];
+                const restrictedCountries = ['RU', 'IT'];
                 if (restrictedCountries.includes(data.country)) {
                     document.body.innerHTML = `
                         <style>
