@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lyla Testing #1 - Chat</title>
+    <title>Lyla Testing #1 - Discord Server</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -65,7 +65,7 @@
             justify-content: center;
             color: white;
             font-weight: 700;
-            font-size: 18px;
+            font-size: 14px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative;
@@ -239,6 +239,16 @@
             transform: scale(1.1);
         }
 
+        .online-users {
+            margin-left: auto;
+            background: #00d4aa;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
         .chat-area {
             flex: 1;
             display: flex;
@@ -274,6 +284,40 @@
             color: #949ba4;
             font-size: 14px;
             font-weight: 500;
+        }
+
+        .server-info {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .server-id {
+            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .server-id:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
+        }
+
+        .online-count {
+            background: #00d4aa;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 12px;
         }
 
         .messages-container {
@@ -323,21 +367,10 @@
             margin-right: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
-            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
         .message-author:hover {
             text-decoration: underline;
-        }
-
-        .message-author.own {
-            background: linear-gradient(135deg, #00d4aa 0%, #01a6f0 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
         .message-timestamp {
@@ -428,14 +461,7 @@
             box-shadow: 0 6px 20px rgba(88, 101, 242, 0.5);
         }
 
-        .send-button:disabled {
-            background: #4f5660;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .connection-modal {
+        .join-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -613,39 +639,6 @@
             font-weight: 500;
         }
 
-        .connection-status {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .connection-status.connected {
-            background: linear-gradient(135deg, #00d4aa 0%, #01a6f0 100%);
-            color: white;
-            box-shadow: 0 4px 12px rgba(0, 212, 170, 0.3);
-        }
-
-        .connection-status.connecting {
-            background: linear-gradient(135deg, #faa61a 0%, #f39c12 100%);
-            color: white;
-            box-shadow: 0 4px 12px rgba(250, 166, 26, 0.3);
-            animation: pulse 2s infinite;
-        }
-
-        .connection-status.disconnected {
-            background: linear-gradient(135deg, #ed4245 0%, #c92a2a 100%);
-            color: white;
-            box-shadow: 0 4px 12px rgba(237, 66, 69, 0.3);
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
         .system-message {
             text-align: center;
             color: #80848e;
@@ -660,24 +653,54 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .room-id-display {
-            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-left: auto;
-            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
-            cursor: pointer;
-            transition: all 0.2s ease;
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #949ba4;
         }
 
-        .room-id-display:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(88, 101, 242, 0.5);
+        .welcome-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            margin-bottom: 24px;
+        }
+
+        .join-server-btn {
+            background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
+        }
+
+        .join-server-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(88, 101, 242, 0.5);
+        }
+
+        .user-colors {
+            --color-1: #ff6b6b;
+            --color-2: #4ecdc4;
+            --color-3: #45b7d1;
+            --color-4: #96ceb4;
+            --color-5: #ffeaa7;
+            --color-6: #dda0dd;
+            --color-7: #98d8c8;
+            --color-8: #a8e6cf;
         }
 
         @media (max-width: 768px) {
@@ -697,30 +720,6 @@
 
         .hidden {
             display: none !important;
-        }
-
-        /* Custom scrollbar for webkit browsers */
-        * {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-        }
-
-        *::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        *::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        *::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-        }
-
-        *::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
         }
     </style>
 </head>
@@ -744,6 +743,11 @@
                 <div class="channel active">
                     <span class="channel-icon">#</span>
                     <span>general</span>
+                    <span class="online-users" id="onlineCount">0</span>
+                </div>
+                <div class="channel">
+                    <span class="channel-icon">#</span>
+                    <span>random</span>
                 </div>
 
                 <div class="channel-category">Voice Channels</div>
@@ -751,11 +755,9 @@
                     <span class="channel-icon">🔊</span>
                     <span>General</span>
                 </div>
-
-                <div class="channel-category">Connection</div>
-                <div class="channel" onclick="showConnectionModal()">
-                    <span class="channel-icon">🔗</span>
-                    <span>connect</span>
+                <div class="channel">
+                    <span class="channel-icon">🔊</span>
+                    <span>Music</span>
                 </div>
             </div>
 
@@ -763,8 +765,8 @@
                 <div class="user-info">
                     <div class="user-avatar" id="userAvatar">?</div>
                     <div class="user-details">
-                        <div class="username" id="displayUsername">Not Connected</div>
-                        <div class="user-status" id="userStatus">Click connect to join</div>
+                        <div class="username" id="displayUsername">Guest User</div>
+                        <div class="user-status" id="userStatus">Click to set username</div>
                     </div>
                 </div>
             </div>
@@ -776,24 +778,28 @@
                 <span class="channel-icon">#</span>
                 <span class="chat-title">general</span>
                 <span class="channel-topic">• Welcome to Lyla Testing #1</span>
-                <div class="room-id-display hidden" id="roomIdDisplay" onclick="copyRoomId()">
-                    Room: <span id="roomIdText">XXXX</span>
-                </div>
-                <div style="margin-left: auto;">
-                    <span class="connection-status disconnected" id="connectionStatus">Disconnected</span>
+                <div class="server-info">
+                    <div class="online-count">
+                        <span id="totalOnline">1</span> Online
+                    </div>
+                    <div class="server-id" onclick="copyServerId()" title="Click to copy server ID">
+                        Server: <span id="serverIdText">LYLA01</span>
+                    </div>
                 </div>
             </div>
 
             <div class="messages-container" id="messagesContainer">
-                <div class="system-message">
-                    🚀 Welcome to Lyla Testing #1! Click the "connect" channel to start chatting with someone.
+                <div class="welcome-message" id="welcomeMessage">
+                    <div class="welcome-title">🚀 Welcome to Lyla Testing #1!</div>
+                    <div class="welcome-subtitle">This is a live chat server. Set your username to start chatting!</div>
+                    <button class="join-server-btn" onclick="showJoinModal()">Set Username</button>
                 </div>
             </div>
 
             <div class="message-input-container">
                 <div class="message-input-wrapper">
                     <input type="text" class="message-input" id="messageInput" 
-                           placeholder="Message #general" disabled>
+                           placeholder="Set your username first..." disabled>
                     <button class="send-button" id="sendButton" disabled>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
@@ -804,432 +810,144 @@
         </div>
     </div>
 
-    <!-- Connection Modal -->
-    <div class="connection-modal" id="connectionModal">
+    <!-- Join Modal -->
+    <div class="join-modal hidden" id="joinModal">
         <div class="modal-content">
-            <div class="modal-header">🚀 Join Chat Room</div>
-            <div class="modal-description">Enter your username and room ID to connect with someone</div>
+            <div class="modal-header">🎮 Join the Server</div>
+            <div class="modal-description">Choose your username to start chatting in Lyla Testing #1</div>
             
             <div class="input-group">
                 <label class="input-label">Username</label>
                 <input type="text" class="modal-input" id="usernameInput" placeholder="Enter your display name">
             </div>
             
-            <div class="input-group">
-                <label class="input-label">Room ID</label>
-                <input type="text" class="modal-input" id="roomIdInput" placeholder="Enter room ID or leave blank to create new room">
-            </div>
-            
             <div class="modal-buttons">
-                <button class="modal-button secondary" onclick="hideConnectionModal()">Cancel</button>
-                <button class="modal-button primary" onclick="connectToRoom()">Connect</button>
+                <button class="modal-button primary" onclick="joinServer()">Join Server</button>
             </div>
         </div>
     </div>
 
     <script>
-        class LylaP2PChat {
+        class LylaServer {
             constructor() {
-                this.peerConnection = null;
-                this.dataChannel = null;
                 this.username = '';
-                this.roomId = '';
-                this.isHost = false;
-                this.isConnected = false;
-                this.remoteUsername = '';
-                this.connectionTimeout = null;
+                this.serverId = 'LYLA01';
+                this.users = new Set();
+                this.userColors = [
+                    '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', 
+                    '#ffeaa7', '#dda0dd', '#98d8c8', '#a8e6cf'
+                ];
+                this.userColorMap = new Map();
+                this.isJoined = false;
                 
+                this.loadMessages();
+                this.loadUsers();
                 this.setupEventListeners();
+                this.startUserSync();
                 this.updateUI();
             }
 
             setupEventListeners() {
                 document.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
-                        if (e.target.id === 'messageInput' && !e.target.disabled) {
+                        if (e.target.id === 'messageInput' && this.isJoined) {
                             this.sendMessage();
-                        } else if (e.target.classList.contains('modal-input')) {
-                            connectToRoom();
+                        } else if (e.target.id === 'usernameInput') {
+                            joinServer();
                         }
                     }
                 });
 
                 document.getElementById('sendButton').onclick = () => this.sendMessage();
+                
+                // User info click to change username
+                document.querySelector('.user-info').onclick = () => {
+                    if (this.isJoined) {
+                        showJoinModal();
+                    }
+                };
             }
 
-            async connectToRoom() {
+            joinServer() {
                 const username = document.getElementById('usernameInput').value.trim();
-                const roomId = document.getElementById('roomIdInput').value.trim();
-
+                
                 if (!username) {
-                    alert('Please enter a username');
+                    alert('Please enter a username!');
                     return;
                 }
 
+                // If changing username, announce it
+                if (this.isJoined && this.username !== username) {
+                    this.addSystemMessage(`${this.username} changed their name to ${username}`);
+                    this.removeUser(this.username);
+                }
+
+                const wasJoined = this.isJoined;
                 this.username = username;
-                this.roomId = roomId || this.generateRoomId();
-                this.isHost = !roomId;
-
-                this.updateConnectionStatus('connecting');
-                hideConnectionModal();
-
-                // Show room ID in header
-                document.getElementById('roomIdDisplay').classList.remove('hidden');
-                document.getElementById('roomIdText').textContent = this.roomId;
-
-                try {
-                    await this.initializePeerConnection();
-                    this.addSystemMessage(`${this.isHost ? '🎉 Created' : '🔗 Joining'} room: ${this.roomId}`);
-                    
-                    if (this.isHost) {
-                        this.addSystemMessage('⏳ Waiting for someone to join...');
-                        this.addSystemMessage(`📋 Share this room ID: ${this.roomId}`);
-                    }
-
-                    // Set connection timeout
-                    this.connectionTimeout = setTimeout(() => {
-                        if (!this.isConnected) {
-                            this.addSystemMessage('⚠️ Connection timeout. Please try again.');
-                            this.updateConnectionStatus('disconnected');
-                        }
-                    }, 30000); // 30 second timeout
-
-                } catch (error) {
-                    console.error('Connection failed:', error);
-                    this.addSystemMessage('❌ Connection failed. Please try again.');
-                    this.updateConnectionStatus('disconnected');
-                }
-            }
-
-            async initializePeerConnection() {
-                // Clear any existing signaling data
-                this.clearSignalingData();
+                this.isJoined = true;
                 
-                // Create peer connection with STUN servers
-                this.peerConnection = new RTCPeerConnection({
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
-                });
-
-                // Set up data channel
-                if (this.isHost) {
-                    this.dataChannel = this.peerConnection.createDataChannel('chat', {
-                        ordered: true
-                    });
-                    this.setupDataChannel(this.dataChannel);
-                } else {
-                    this.peerConnection.ondatachannel = (event) => {
-                        this.dataChannel = event.channel;
-                        this.setupDataChannel(this.dataChannel);
-                    };
+                // Add user to online list
+                this.addUser(username);
+                
+                // Hide welcome message and modal
+                document.getElementById('welcomeMessage').classList.add('hidden');
+                document.getElementById('joinModal').classList.add('hidden');
+                
+                // Show join message for new users
+                if (!wasJoined) {
+                    this.addSystemMessage(`🎉 ${username} joined the server!`);
                 }
-
-                // Collect ICE candidates
-                this.localIceCandidates = [];
-                this.peerConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        this.localIceCandidates.push(event.candidate);
-                        this.saveSignalingData();
-                    } else {
-                        // ICE gathering complete
-                        console.log('ICE gathering complete');
-                    }
-                };
-
-                // Handle connection state changes
-                this.peerConnection.onconnectionstatechange = () => {
-                    const state = this.peerConnection.connectionState;
-                    console.log('Connection state:', state);
-                    
-                    if (state === 'connected') {
-                        this.isConnected = true;
-                        this.updateConnectionStatus('connected');
-                        this.addSystemMessage('✅ Connected successfully!');
-                        if (this.connectionTimeout) {
-                            clearTimeout(this.connectionTimeout);
-                        }
-                        // Clear signaling data after successful connection
-                        setTimeout(() => this.clearSignalingData(), 5000);
-                    } else if (state === 'disconnected' || state === 'failed' || state === 'closed') {
-                        this.isConnected = false;
-                        this.updateConnectionStatus('disconnected');
-                        this.addSystemMessage('💔 Connection lost');
-                    }
-                };
-
-                // Start the connection process
-                if (this.isHost) {
-                    await this.createOffer();
-                } else {
-                    this.waitForOffer();
-                }
-
+                
                 this.updateUI();
             }
 
-            setupDataChannel(channel) {
-                channel.onopen = () => {
-                    console.log('Data channel opened');
-                    this.isConnected = true;
-                    this.updateConnectionStatus('connected');
-                    
-                    // Send initial greeting
-                    this.sendDataChannelMessage({
-                        type: 'user-joined',
-                        username: this.username,
-                        timestamp: new Date().toISOString()
-                    });
-                };
-
-                channel.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        this.handleDataChannelMessage(data);
-                    } catch (error) {
-                        console.error('Error parsing message:', error);
-                    }
-                };
-
-                channel.onclose = () => {
-                    console.log('Data channel closed');
-                    this.isConnected = false;
-                    this.updateConnectionStatus('disconnected');
-                    this.addSystemMessage('👋 Peer disconnected');
-                };
-
-                channel.onerror = (error) => {
-                    console.error('Data channel error:', error);
-                    this.addSystemMessage('⚠️ Communication error occurred');
-                };
-            }
-
-            handleDataChannelMessage(data) {
-                switch (data.type) {
-                    case 'chat-message':
-                        this.addMessage(data.username, data.message, data.timestamp, false);
-                        break;
-                    case 'user-joined':
-                        this.remoteUsername = data.username;
-                        this.addSystemMessage(`🎉 ${data.username} joined the chat!`);
-                        break;
-                    case 'typing':
-                        // Could implement typing indicators here
-                        break;
-                }
-            }
-
-            sendDataChannelMessage(data) {
-                if (this.dataChannel && this.dataChannel.readyState === 'open') {
-                    this.dataChannel.send(JSON.stringify(data));
-                    return true;
-                }
-                return false;
-            }
-
-            async createOffer() {
-                try {
-                    console.log('Creating offer...');
-                    const offer = await this.peerConnection.createOffer();
-                    await this.peerConnection.setLocalDescription(offer);
-                    
-                    // Save offer with username
-                    this.saveSignalingData();
-                    this.addSystemMessage('📡 Offer created, waiting for peer...');
-                    
-                    // Wait for answer
-                    this.waitForAnswer();
-                } catch (error) {
-                    console.error('Error creating offer:', error);
-                    this.addSystemMessage('❌ Failed to create offer');
-                }
-            }
-
-            waitForOffer() {
-                console.log('Waiting for offer...');
-                const checkInterval = setInterval(() => {
-                    const data = this.getSignalingData();
-                    if (data && data.offer && data.username !== this.username) {
-                        console.log('Found offer, creating answer...');
-                        clearInterval(checkInterval);
-                        this.handleOffer(data);
-                    }
-                }, 1000);
-
-                // Stop waiting after timeout
-                setTimeout(() => {
-                    clearInterval(checkInterval);
-                    if (!this.isConnected) {
-                        this.addSystemMessage('⏰ No offer found, connection timed out');
-                        this.updateConnectionStatus('disconnected');
-                    }
-                }, 25000);
-            }
-
-            async handleOffer(data) {
-                try {
-                    console.log('Handling offer from:', data.username);
-                    this.remoteUsername = data.username;
-                    
-                    await this.peerConnection.setRemoteDescription(data.offer);
-                    const answer = await this.peerConnection.createAnswer();
-                    await this.peerConnection.setLocalDescription(answer);
-                    
-                    // Save answer
-                    this.saveSignalingData();
-                    this.addSystemMessage('📡 Answer sent, establishing connection...');
-                    
-                    // Add remote ICE candidates
-                    if (data.iceCandidates) {
-                        for (const candidate of data.iceCandidates) {
-                            try {
-                                await this.peerConnection.addIceCandidate(candidate);
-                            } catch (error) {
-                                console.error('Error adding ICE candidate:', error);
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error handling offer:', error);
-                    this.addSystemMessage('❌ Failed to handle offer');
-                }
-            }
-
-            waitForAnswer() {
-                console.log('Waiting for answer...');
-                const checkInterval = setInterval(() => {
-                    const data = this.getSignalingData();
-                    if (data && data.answer && data.username !== this.username) {
-                        console.log('Found answer from:', data.username);
-                        clearInterval(checkInterval);
-                        this.handleAnswer(data);
-                    }
-                }, 1000);
-
-                // Stop waiting after timeout
-                setTimeout(() => {
-                    clearInterval(checkInterval);
-                    if (!this.isConnected) {
-                        this.addSystemMessage('⏰ No answer received, connection timed out');
-                        this.updateConnectionStatus('disconnected');
-                    }
-                }, 25000);
-            }
-
-            async handleAnswer(data) {
-                try {
-                    console.log('Handling answer from:', data.username);
-                    this.remoteUsername = data.username;
-                    
-                    await this.peerConnection.setRemoteDescription(data.answer);
-                    this.addSystemMessage('📡 Answer received, finalizing connection...');
-                    
-                    // Add remote ICE candidates
-                    if (data.iceCandidates) {
-                        for (const candidate of data.iceCandidates) {
-                            try {
-                                await this.peerConnection.addIceCandidate(candidate);
-                            } catch (error) {
-                                console.error('Error adding ICE candidate:', error);
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error handling answer:', error);
-                    this.addSystemMessage('❌ Failed to handle answer');
-                }
-            }
-
-            saveSignalingData() {
-                const key = `lyla-signal-${this.roomId}`;
-                const data = {
-                    username: this.username,
-                    timestamp: Date.now()
-                };
-
-                // Add offer if we have one
-                if (this.peerConnection.localDescription && this.peerConnection.localDescription.type === 'offer') {
-                    data.offer = this.peerConnection.localDescription;
-                }
-
-                // Add answer if we have one
-                if (this.peerConnection.localDescription && this.peerConnection.localDescription.type === 'answer') {
-                    data.answer = this.peerConnection.localDescription;
-                }
-
-                // Add ICE candidates
-                if (this.localIceCandidates && this.localIceCandidates.length > 0) {
-                    data.iceCandidates = this.localIceCandidates;
-                }
-
-                localStorage.setItem(key, JSON.stringify(data));
-                console.log('Saved signaling data:', data);
-            }
-
-            getSignalingData() {
-                const key = `lyla-signal-${this.roomId}`;
-                const stored = localStorage.getItem(key);
-                if (stored) {
-                    try {
-                        return JSON.parse(stored);
-                    } catch (error) {
-                        console.error('Error parsing signaling data:', error);
-                        return null;
-                    }
-                }
-                return null;
-            }
-
-            clearSignalingData() {
-                const key = `lyla-signal-${this.roomId}`;
-                localStorage.removeItem(key);
-                console.log('Cleared signaling data for room:', this.roomId);
-            }
-
             sendMessage() {
+                if (!this.isJoined) return;
+                
                 const input = document.getElementById('messageInput');
                 const message = input.value.trim();
                 
-                if (!message || !this.isConnected) return;
+                if (!message) return;
 
-                const timestamp = new Date().toISOString();
-                this.addMessage(this.username, message, timestamp, true);
-                
-                const sent = this.sendDataChannelMessage({
-                    type: 'chat-message',
+                const messageData = {
+                    id: Date.now() + Math.random(),
                     username: this.username,
-                    message: message,
-                    timestamp: timestamp
-                });
+                    content: message,
+                    timestamp: new Date().toISOString(),
+                    color: this.getUserColor(this.username)
+                };
 
-                if (!sent) {
-                    this.addSystemMessage('⚠️ Failed to send message - connection lost');
-                }
-
+                this.addMessage(messageData);
+                this.saveMessage(messageData);
                 input.value = '';
             }
 
-            addMessage(username, content, timestamp, isOwn = false) {
+            addMessage(messageData, isSystem = false) {
                 const container = document.getElementById('messagesContainer');
                 const messageDiv = document.createElement('div');
-                messageDiv.className = 'message';
+                
+                if (isSystem) {
+                    messageDiv.className = 'system-message';
+                    messageDiv.textContent = messageData;
+                } else {
+                    messageDiv.className = 'message';
+                    const time = new Date(messageData.timestamp);
+                    const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const isOwn = messageData.username === this.username;
 
-                const time = new Date(timestamp);
-                const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                messageDiv.innerHTML = `
-                    <div class="message-header">
-                        <span class="message-author ${isOwn ? 'own' : ''}">${this.escapeHtml(username)}</span>
-                        <span class="message-timestamp">${timeString}</span>
-                    </div>
-                    <div class="message-content">${this.escapeHtml(content)}</div>
-                `;
+                    messageDiv.innerHTML = `
+                        <div class="message-header">
+                            <span class="message-author" style="color: ${messageData.color || this.getUserColor(messageData.username)}">${this.escapeHtml(messageData.username)}</span>
+                            <span class="message-timestamp">${timeString}</span>
+                        </div>
+                        <div class="message-content">${this.escapeHtml(messageData.content)}</div>
+                    `;
+                }
 
                 container.appendChild(messageDiv);
                 container.scrollTop = container.scrollHeight;
 
-                // Add animation
+                // Add smooth animation
                 messageDiv.style.opacity = '0';
                 messageDiv.style.transform = 'translateY(20px)';
                 requestAnimationFrame(() => {
@@ -1240,41 +958,95 @@
             }
 
             addSystemMessage(message) {
-                const container = document.getElementById('messagesContainer');
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'system-message';
-                messageDiv.textContent = message;
-                container.appendChild(messageDiv);
-                container.scrollTop = container.scrollHeight;
+                this.addMessage(message, true);
+                
+                // Save system messages too
+                const messageData = {
+                    id: Date.now() + Math.random(),
+                    type: 'system',
+                    content: message,
+                    timestamp: new Date().toISOString()
+                };
+                this.saveMessage(messageData);
+            }
 
-                // Add animation
-                messageDiv.style.opacity = '0';
-                requestAnimationFrame(() => {
-                    messageDiv.style.transition = 'opacity 0.3s ease';
-                    messageDiv.style.opacity = '1';
+            saveMessage(messageData) {
+                const messages = this.getMessages();
+                messages.push(messageData);
+                
+                // Keep only last 100 messages
+                if (messages.length > 100) {
+                    messages.splice(0, messages.length - 100);
+                }
+                
+                localStorage.setItem(`lyla-messages-${this.serverId}`, JSON.stringify(messages));
+            }
+
+            getMessages() {
+                const stored = localStorage.getItem(`lyla-messages-${this.serverId}`);
+                return stored ? JSON.parse(stored) : [];
+            }
+
+            loadMessages() {
+                const messages = this.getMessages();
+                const container = document.getElementById('messagesContainer');
+                
+                // Clear existing messages except welcome
+                const existingMessages = container.querySelectorAll('.message, .system-message');
+                existingMessages.forEach(msg => msg.remove());
+                
+                messages.forEach(messageData => {
+                    if (messageData.type === 'system') {
+                        this.addMessage(messageData.content, true);
+                    } else {
+                        this.addMessage(messageData);
+                    }
                 });
             }
 
-            updateConnectionStatus(status) {
-                const statusElement = document.getElementById('connectionStatus');
-                const userStatus = document.getElementById('userStatus');
-                
-                statusElement.className = `connection-status ${status}`;
-                
-                switch (status) {
-                    case 'connected':
-                        statusElement.textContent = 'Connected';
-                        userStatus.textContent = `Room: ${this.roomId}`;
-                        break;
-                    case 'connecting':
-                        statusElement.textContent = 'Connecting...';
-                        userStatus.textContent = 'Establishing connection...';
-                        break;
-                    case 'disconnected':
-                        statusElement.textContent = 'Disconnected';
-                        userStatus.textContent = 'Click connect to join';
-                        break;
+            addUser(username) {
+                this.users.add(username);
+                this.saveUsers();
+                this.updateUserCount();
+            }
+
+            removeUser(username) {
+                this.users.delete(username);
+                this.saveUsers();
+                this.updateUserCount();
+            }
+
+            saveUsers() {
+                const usersArray = Array.from(this.users);
+                localStorage.setItem(`lyla-users-${this.serverId}`, JSON.stringify({
+                    users: usersArray,
+                    timestamp: Date.now()
+                }));
+            }
+
+            loadUsers() {
+                const stored = localStorage.getItem(`lyla-users-${this.serverId}`);
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    // Only load users if data is recent (within 5 minutes)
+                    if (Date.now() - data.timestamp < 300000) {
+                        this.users = new Set(data.users);
+                    }
                 }
+                this.updateUserCount();
+            }
+
+            updateUserCount() {
+                document.getElementById('onlineCount').textContent = this.users.size;
+                document.getElementById('totalOnline').textContent = this.users.size;
+            }
+
+            getUserColor(username) {
+                if (!this.userColorMap.has(username)) {
+                    const colorIndex = Array.from(this.userColorMap.keys()).length % this.userColors.length;
+                    this.userColorMap.set(username, this.userColors[colorIndex]);
+                }
+                return this.userColorMap.get(username);
             }
 
             updateUI() {
@@ -1282,26 +1054,62 @@
                 const sendButton = document.getElementById('sendButton');
                 const displayUsername = document.getElementById('displayUsername');
                 const userAvatar = document.getElementById('userAvatar');
+                const userStatus = document.getElementById('userStatus');
 
-                if (this.username) {
+                if (this.isJoined) {
                     displayUsername.textContent = this.username;
                     userAvatar.textContent = this.username.charAt(0).toUpperCase();
-                    messageInput.disabled = !this.isConnected;
-                    sendButton.disabled = !this.isConnected;
-                    messageInput.placeholder = this.isConnected ? 
-                        `Message #general` : 
-                        'Waiting for connection...';
+                    userStatus.textContent = `Online in ${this.serverId}`;
+                    messageInput.disabled = false;
+                    sendButton.disabled = false;
+                    messageInput.placeholder = 'Message #general';
+                    
+                    // Set user avatar color
+                    userAvatar.style.background = `linear-gradient(135deg, ${this.getUserColor(this.username)}, ${this.getUserColor(this.username)}dd)`;
                 } else {
-                    displayUsername.textContent = 'Not Connected';
+                    displayUsername.textContent = 'Guest User';
                     userAvatar.textContent = '?';
+                    userStatus.textContent = 'Click to set username';
                     messageInput.disabled = true;
                     sendButton.disabled = true;
-                    messageInput.placeholder = 'Message #general';
+                    messageInput.placeholder = 'Set your username first...';
                 }
             }
 
-            generateRoomId() {
-                return Math.random().toString(36).substring(2, 8).toUpperCase();
+            startUserSync() {
+                // Sync users every 10 seconds
+                setInterval(() => {
+                    if (this.isJoined) {
+                        this.addUser(this.username); // Keep self in the list
+                        
+                        // Clean up old users (remove users inactive for 1 minute)
+                        const stored = localStorage.getItem(`lyla-users-${this.serverId}`);
+                        if (stored) {
+                            const data = JSON.parse(stored);
+                            if (Date.now() - data.timestamp > 60000) {
+                                // Reset user list if too old
+                                this.users.clear();
+                                this.addUser(this.username);
+                            }
+                        }
+                    }
+                }, 10000);
+
+                // Listen for new messages from other users
+                this.startMessageSync();
+            }
+
+            startMessageSync() {
+                let lastMessageCount = this.getMessages().length;
+                
+                setInterval(() => {
+                    const messages = this.getMessages();
+                    if (messages.length > lastMessageCount) {
+                        // New messages added, reload the chat
+                        this.loadMessages();
+                        lastMessageCount = messages.length;
+                    }
+                }, 2000);
             }
 
             escapeHtml(text) {
@@ -1309,63 +1117,72 @@
                 div.textContent = text;
                 return div.innerHTML;
             }
+        }
 
-            cleanup() {
-                if (this.connectionTimeout) {
-                    clearTimeout(this.connectionTimeout);
-                }
-                if (this.peerConnection) {
-                    this.peerConnection.close();
-                }
-                if (this.dataChannel) {
-                    this.dataChannel.close();
-                }
+        // Global server instance
+        let server = new LylaServer();
+
+        // Global functions
+        function showJoinModal() {
+            document.getElementById('joinModal').classList.remove('hidden');
+            document.getElementById('usernameInput').focus();
+            
+            // Pre-fill with current username if changing
+            if (server.isJoined) {
+                document.getElementById('usernameInput').value = server.username;
             }
         }
 
-        // Global chat instance
-        let chat = new LylaP2PChat();
-
-        // Global functions
-        function showConnectionModal() {
-            document.getElementById('connectionModal').classList.remove('hidden');
-            document.getElementById('usernameInput').focus();
+        function hideJoinModal() {
+            document.getElementById('joinModal').classList.add('hidden');
         }
 
-        function hideConnectionModal() {
-            document.getElementById('connectionModal').classList.add('hidden');
+        function joinServer() {
+            server.joinServer();
         }
 
-        function connectToRoom() {
-            chat.connectToRoom();
-        }
-
-        function copyRoomId() {
-            const roomId = document.getElementById('roomIdText').textContent;
-            navigator.clipboard.writeText(roomId).then(() => {
+        function copyServerId() {
+            const serverId = document.getElementById('serverIdText').textContent;
+            navigator.clipboard.writeText(serverId).then(() => {
                 // Visual feedback
-                const element = document.getElementById('roomIdDisplay');
-                const originalText = element.innerHTML;
-                element.innerHTML = '✅ Copied!';
+                const element = document.getElementById('serverIdText');
+                const originalText = element.textContent;
+                element.textContent = 'Copied!';
                 setTimeout(() => {
-                    element.innerHTML = originalText;
+                    element.textContent = originalText;
                 }, 1500);
             }).catch(() => {
-                alert(`Room ID: ${roomId}`);
+                alert(`Server ID: ${serverId}`);
             });
         }
 
         // Modal click outside to close
-        document.getElementById('connectionModal').addEventListener('click', (e) => {
+        document.getElementById('joinModal').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) {
-                hideConnectionModal();
+                hideJoinModal();
+            }
+        });
+
+        // Page visibility handling - update user activity
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && server.isJoined) {
+                server.addUser(server.username);
             }
         });
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
-            chat.cleanup();
+            if (server.isJoined) {
+                server.addSystemMessage(`👋 ${server.username} left the server`);
+            }
         });
+
+        // Auto-show join modal on load
+        setTimeout(() => {
+            if (!server.isJoined) {
+                showJoinModal();
+            }
+        }, 1000);
     </script>
 </body>
 </html>
