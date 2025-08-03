@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lyla Testing #1 - FB</title>
+    <title>Lyla Testing #1 - Discord Server</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -942,7 +942,7 @@
                     firebase.initializeApp(firebaseConfig);
                     this.database = firebase.database();
                     
-                    // Test connection
+                    // Test connection and write permissions
                     const connectedRef = this.database.ref('.info/connected');
                     await new Promise((resolve, reject) => {
                         const timeout = setTimeout(() => {
@@ -951,12 +951,24 @@
                         
                         connectedRef.once('value', (snapshot) => {
                             clearTimeout(timeout);
-                            resolve(snapshot.val());
+                            if (snapshot.val()) {
+                                resolve(snapshot.val());
+                            } else {
+                                reject(new Error('Not connected'));
+                            }
                         }, (error) => {
                             clearTimeout(timeout);
                             reject(error);
                         });
                     });
+                    
+                    // Test write permissions with a simple test
+                    const testRef = this.database.ref(`servers/${this.serverId}/test`);
+                    await testRef.set({
+                        timestamp: Date.now(),
+                        test: true
+                    });
+                    await testRef.remove(); // Clean up test data
                     
                     this.setupFirebaseListeners();
                     this.setConnectionStatus('connected', 'Connected to Firebase');
@@ -966,8 +978,13 @@
                     
                 } catch (error) {
                     console.error('Firebase initialization failed:', error);
+                    if (error.code === 'PERMISSION_DENIED' || error.message?.includes('permission')) {
+                        this.updateFirebaseStatus('⚠️ Firebase database rules deny access - Using offline mode');
+                        console.warn('Firebase security rules are blocking writes. Database rules need to be configured.');
+                    } else {
+                        this.updateFirebaseStatus('⚠️ Firebase connection failed - Using offline mode');
+                    }
                     this.setConnectionStatus('disconnected', 'Connection failed');
-                    this.updateFirebaseStatus('⚠️ Firebase connection failed - Using offline mode');
                     this.startDemoMode();
                 }
             }
@@ -1162,6 +1179,10 @@
                         await this.database.ref(`servers/${this.serverId}/messages`).push(messageData);
                     } catch (error) {
                         console.error('Failed to send message to Firebase:', error);
+                        // If Firebase fails, fall back to localStorage and disable Firebase
+                        this.isConnected = false;
+                        this.setConnectionStatus('disconnected', 'Firebase error - offline mode');
+                        this.updateFirebaseStatus('⚠️ Firebase write failed - Using offline mode');
                         this.saveMessageToStorage(messageData);
                     }
                 } else {
@@ -1239,6 +1260,10 @@
                         await this.database.ref(`servers/${this.serverId}/systemMessages`).push(messageData);
                     } catch (error) {
                         console.error('Failed to send system message:', error);
+                        // If Firebase fails, fall back to localStorage and disable Firebase
+                        this.isConnected = false;
+                        this.setConnectionStatus('disconnected', 'Firebase error - offline mode');
+                        this.updateFirebaseStatus('⚠️ Firebase write failed - Using offline mode');
                         this.saveSystemMessageToStorage(messageData);
                     }
                 } else {
@@ -1258,11 +1283,16 @@
 
                 if (this.isConnected && this.database) {
                     try {
-                        await this.database.ref(`servers/${this.serverId}/users/${this.userId}`).set(userData);
+                        const userRef = this.database.ref(`servers/${this.serverId}/users/${this.userId}`);
+                        await userRef.set(userData);
                         // Remove user when they disconnect
-                        this.database.ref(`servers/${this.serverId}/users/${this.userId}`).onDisconnect().remove();
+                        userRef.onDisconnect().remove();
                     } catch (error) {
                         console.error('Failed to update presence:', error);
+                        // If Firebase fails, fall back to localStorage and disable Firebase
+                        this.isConnected = false;
+                        this.setConnectionStatus('disconnected', 'Firebase error - offline mode');
+                        this.updateFirebaseStatus('⚠️ Firebase write failed - Using offline mode');
                         this.saveUserToStorage(userData);
                     }
                 } else {
@@ -1276,6 +1306,8 @@
                         await this.database.ref(`servers/${this.serverId}/users/${this.userId}`).remove();
                     } catch (error) {
                         console.error('Failed to remove presence:', error);
+                        // If Firebase fails, don't crash - just use localStorage
+                        this.isConnected = false;
                     }
                 }
                 this.removeUserFromStorage();
