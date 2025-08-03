@@ -754,10 +754,43 @@
 
         <!-- Main Chat Area -->
         <div class="chat-container">
-            <!-- Loading Screen -->
-            <div class="loading" id="loadingScreen">
-                <div class="spinner"></div>
-                <span>Connecting to Firebase...</span>
+            <!-- Geo Block Screen -->
+            <div class="geo-block-screen" id="geoBlockScreen" style="display: none;">
+                <div class="block-card">
+                    <div class="block-icon">🚫</div>
+                    <h1 class="block-title">Access Restricted</h1>
+                    <p class="block-subtitle">Sorry, your location is not permitted to access this service</p>
+                    
+                    <div class="block-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Your IP Address:</span>
+                            <span class="detail-value" id="userIP">Detecting...</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Detected Country:</span>
+                            <span class="detail-value" id="userCountry">Detecting...</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Restriction Reason:</span>
+                            <span class="detail-value">Geographic compliance restrictions</span>
+                        </div>
+                    </div>
+                    
+                    <div class="block-message">
+                        <p>We apologize, but due to regulatory compliance requirements and regional data protection laws, access to this global chat service is currently restricted in the United States and United Kingdom.</p>
+                        
+                        <p>This restriction is in place to ensure full compliance with local telecommunications regulations, data privacy laws (including GDPR and CCPA), and content moderation requirements specific to these jurisdictions.</p>
+                        
+                        <p>If you believe this detection is incorrect or you are accessing from an authorized location, please check your VPN settings or contact our technical support team for assistance.</p>
+                        
+                        <p><strong>We appreciate your understanding and apologize for any inconvenience this may cause.</strong></p>
+                    </div>
+                    
+                    <div class="block-actions">
+                        <button class="button-secondary" onclick="window.location.reload()">Retry Connection</button>
+                        <button class="button-secondary" onclick="window.close()">Close Window</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Username Setup -->
