@@ -51,6 +51,34 @@
             opacity: 0.9;
         }
 
+        .connection-status {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #44ff44;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
         .username-setup {
             display: flex;
             flex-direction: column;
@@ -255,6 +283,29 @@
             font-style: italic;
         }
 
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            color: #666;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* Custom scrollbar */
         .messages-container::-webkit-scrollbar {
             width: 6px;
@@ -292,6 +343,12 @@
             .username-setup h2 {
                 font-size: 24px;
             }
+
+            .connection-status {
+                position: static;
+                justify-content: center;
+                margin-top: 10px;
+            }
         }
     </style>
 </head>
@@ -300,14 +357,24 @@
         <div class="chat-header">
             <h1>🌍 Global Chat Room</h1>
             <div class="online-count"><span id="onlineCount">0</span> users online</div>
+            <div class="connection-status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div class="loading" id="loadingScreen">
+            <div class="spinner"></div>
+            <span>Connecting to Firebase...</span>
         </div>
 
         <!-- Username Setup Screen -->
-        <div class="username-setup" id="usernameSetup">
+        <div class="username-setup" id="usernameSetup" style="display: none;">
             <h2>Welcome to Global Chat!</h2>
-            <p>Enter your username to join the conversation</p>
+            <p>Enter your username to join the worldwide conversation</p>
             <input type="text" class="username-input" id="usernameInput" placeholder="Enter your username..." maxlength="20">
-            <button class="join-btn" id="joinBtn">Join Chat</button>
+            <button class="join-btn" id="joinBtn" disabled>Join Chat</button>
         </div>
 
         <!-- Main Chat Interface -->
@@ -325,22 +392,46 @@
         </div>
     </div>
 
-    <script>
-        class GlobalChat {
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, push, onValue, set, onDisconnect, serverTimestamp, off } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAgtHnNckPl-zY94sUMKYGG57tS-Qr4oMw",
+            authDomain: "chatapp-27b81.firebaseapp.com",
+            databaseURL: "https://chatapp-27b81-default-rtdb.europe-west1.firebasedatabase.app/",
+            projectId: "chatapp-27b81",
+            storageBucket: "chatapp-27b81.firebasestorage.app",
+            messagingSenderId: "787626167817",
+            appId: "1:787626167817:web:f32b6294fab3a6385532d8",
+            measurementId: "G-MZ6SZRFEQ8"
+        };
+
+        class GlobalFirebaseChat {
             constructor() {
+                this.app = null;
+                this.database = null;
                 this.username = '';
-                this.messages = [];
-                this.users = new Set();
-                this.isTyping = false;
+                this.userId = this.generateUserId();
+                this.isConnected = false;
+                this.messagesRef = null;
+                this.usersRef = null;
+                this.typingRef = null;
                 this.typingTimeout = null;
+                this.lastMessageTime = 0;
                 
                 this.initializeElements();
-                this.setupEventListeners();
-                this.simulateOnlineUsers();
-                this.startPeriodicUpdates();
+                this.initializeFirebase();
+            }
+
+            generateUserId() {
+                return 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
             }
 
             initializeElements() {
+                this.loadingScreen = document.getElementById('loadingScreen');
                 this.usernameSetup = document.getElementById('usernameSetup');
                 this.chatMain = document.getElementById('chatMain');
                 this.usernameInput = document.getElementById('usernameInput');
@@ -350,6 +441,33 @@
                 this.sendBtn = document.getElementById('sendBtn');
                 this.onlineCount = document.getElementById('onlineCount');
                 this.typingIndicator = document.getElementById('typingIndicator');
+                this.statusDot = document.getElementById('statusDot');
+                this.statusText = document.getElementById('statusText');
+
+                this.setupEventListeners();
+            }
+
+            async initializeFirebase() {
+                try {
+                    this.app = initializeApp(firebaseConfig);
+                    this.database = getDatabase(this.app);
+                    
+                    // Test connection
+                    const testRef = ref(this.database, '.info/connected');
+                    onValue(testRef, (snapshot) => {
+                        this.isConnected = snapshot.val();
+                        this.updateConnectionStatus();
+                        
+                        if (this.isConnected) {
+                            this.loadingScreen.style.display = 'none';
+                            this.usernameSetup.style.display = 'flex';
+                        }
+                    });
+
+                } catch (error) {
+                    console.error('Firebase initialization error:', error);
+                    this.statusText.textContent = 'Connection failed';
+                }
             }
 
             setupEventListeners() {
@@ -358,7 +476,8 @@
                     if (e.key === 'Enter') this.joinChat();
                 });
                 this.usernameInput.addEventListener('input', () => {
-                    this.joinBtn.disabled = this.usernameInput.value.trim().length < 2;
+                    const username = this.usernameInput.value.trim();
+                    this.joinBtn.disabled = username.length < 2 || !this.isConnected;
                 });
 
                 this.sendBtn.addEventListener('click', () => this.sendMessage());
@@ -371,71 +490,108 @@
                 });
             }
 
-            joinChat() {
-                const username = this.usernameInput.value.trim();
-                if (username.length < 2) return;
-
-                this.username = username;
-                this.users.add(username);
-                this.updateOnlineCount();
-                
-                this.usernameSetup.style.display = 'none';
-                this.chatMain.style.display = 'flex';
-                
-                this.addSystemMessage(`${username} joined the chat`);
-                this.messageInput.focus();
-                
-                // Add some welcome messages
-                setTimeout(() => {
-                    this.addMessage('ChatBot', 'Welcome to Global Chat! 🎉', false);
-                }, 500);
-            }
-
-            sendMessage() {
-                const content = this.messageInput.value.trim();
-                if (!content) return;
-
-                this.addMessage(this.username, content, true);
-                this.messageInput.value = '';
-                this.sendBtn.disabled = true;
-                
-                setTimeout(() => {
-                    this.sendBtn.disabled = false;
-                }, 500);
-
-                // Simulate responses from other users occasionally
-                if (Math.random() < 0.3) {
-                    setTimeout(() => {
-                        this.simulateOtherUserMessage();
-                    }, 1000 + Math.random() * 3000);
+            updateConnectionStatus() {
+                if (this.isConnected) {
+                    this.statusDot.classList.add('connected');
+                    this.statusText.textContent = 'Connected';
+                } else {
+                    this.statusDot.classList.remove('connected');
+                    this.statusText.textContent = 'Disconnected';
                 }
             }
 
-            addMessage(username, content, isOwn) {
-                const message = {
-                    id: Date.now() + Math.random(),
-                    username,
-                    content,
-                    timestamp: new Date(),
-                    isOwn
-                };
+            async joinChat() {
+                const username = this.usernameInput.value.trim();
+                if (username.length < 2 || !this.isConnected) return;
+
+                this.username = username;
                 
-                this.messages.push(message);
-                this.renderMessage(message);
+                try {
+                    // Add user to online users
+                    this.usersRef = ref(this.database, `users/${this.userId}`);
+                    await set(this.usersRef, {
+                        username: this.username,
+                        joinedAt: serverTimestamp(),
+                        lastSeen: serverTimestamp()
+                    });
+
+                    // Set up disconnect handler
+                    onDisconnect(this.usersRef).remove();
+
+                    // Switch to chat interface
+                    this.usernameSetup.style.display = 'none';
+                    this.chatMain.style.display = 'flex';
+                    
+                    // Set up real-time listeners
+                    this.setupMessageListener();
+                    this.setupUserListener();
+                    this.setupTypingListener();
+                    
+                    this.messageInput.focus();
+                    
+                } catch (error) {
+                    console.error('Error joining chat:', error);
+                    alert('Failed to join chat. Please try again.');
+                }
+            }
+
+            setupMessageListener() {
+                this.messagesRef = ref(this.database, 'messages');
+                onValue(this.messagesRef, (snapshot) => {
+                    const messages = snapshot.val();
+                    this.renderMessages(messages);
+                });
+            }
+
+            setupUserListener() {
+                const usersRef = ref(this.database, 'users');
+                onValue(usersRef, (snapshot) => {
+                    const users = snapshot.val();
+                    const userCount = users ? Object.keys(users).length : 0;
+                    this.onlineCount.textContent = userCount;
+                });
+            }
+
+            setupTypingListener() {
+                const typingRef = ref(this.database, 'typing');
+                onValue(typingRef, (snapshot) => {
+                    const typingUsers = snapshot.val();
+                    this.handleTypingIndicator(typingUsers);
+                });
+            }
+
+            renderMessages(messages) {
+                this.messagesContainer.innerHTML = '';
+                
+                if (!messages) return;
+
+                // Convert to array and sort by timestamp
+                const messageArray = Object.entries(messages)
+                    .map(([key, value]) => ({ id: key, ...value }))
+                    .sort((a, b) => a.timestamp - b.timestamp);
+
+                // Show only last 50 messages for performance
+                const recentMessages = messageArray.slice(-50);
+
+                recentMessages.forEach(message => {
+                    this.renderMessage(message);
+                });
+
                 this.scrollToBottom();
             }
 
             renderMessage(message) {
                 const messageEl = document.createElement('div');
-                messageEl.className = `message ${message.isOwn ? 'own' : 'other'}`;
+                const isOwn = message.userId === this.userId;
+                messageEl.className = `message ${isOwn ? 'own' : 'other'}`;
                 
-                const time = message.timestamp.toLocaleTimeString([], {
+                const time = new Date(message.timestamp).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit'
                 });
                 
                 messageEl.innerHTML = `
-                    <div class="message-header">${message.username}</div>
+                    <div class="message-header">${this.escapeHtml(message.username)}</div>
                     <div class="message-content">${this.escapeHtml(message.content)}</div>
                     <div class="message-time">${time}</div>
                 `;
@@ -443,98 +599,88 @@
                 this.messagesContainer.appendChild(messageEl);
             }
 
-            addSystemMessage(content) {
-                const messageEl = document.createElement('div');
-                messageEl.className = 'system-message';
-                messageEl.textContent = content;
-                this.messagesContainer.appendChild(messageEl);
-                this.scrollToBottom();
-            }
+            async sendMessage() {
+                const content = this.messageInput.value.trim();
+                if (!content || !this.isConnected) return;
 
-            simulateOtherUserMessage() {
-                const responses = [
-                    "Hey everyone! 👋",
-                    "How's everyone doing today?",
-                    "Nice to meet you all!",
-                    "Anyone here from Europe?",
-                    "This chat is pretty cool!",
-                    "What's your favorite hobby?",
-                    "Beautiful weather today ☀️",
-                    "Anyone watching any good shows lately?",
-                    "Hope everyone's having a great day!",
-                    "Just joined, what did I miss?",
-                    "Coffee or tea? ☕",
-                    "Working from home today 💻",
-                    "Can't believe it's already this late!",
-                    "Love connecting with people from around the world 🌍"
-                ];
-                
-                const names = ['Alex', 'Jordan', 'Sam', 'Taylor', 'Casey', 'Morgan', 'Riley', 'Avery', 'Quinn', 'Sage'];
-                const randomName = names[Math.floor(Math.random() * names.length)];
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                
-                this.users.add(randomName);
-                this.updateOnlineCount();
-                this.addMessage(randomName, randomResponse, false);
+                // Rate limiting: max 1 message per second
+                const now = Date.now();
+                if (now - this.lastMessageTime < 1000) return;
+                this.lastMessageTime = now;
+
+                try {
+                    const messagesRef = ref(this.database, 'messages');
+                    await push(messagesRef, {
+                        username: this.username,
+                        userId: this.userId,
+                        content: content,
+                        timestamp: serverTimestamp()
+                    });
+
+                    this.messageInput.value = '';
+                    this.clearTyping();
+                    
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    alert('Failed to send message. Please try again.');
+                }
             }
 
             handleTyping() {
-                if (!this.isTyping) {
-                    this.isTyping = true;
-                    this.showTypingIndicator();
-                }
-                
+                if (!this.isConnected) return;
+
+                // Set typing indicator
+                const typingRef = ref(this.database, `typing/${this.userId}`);
+                set(typingRef, {
+                    username: this.username,
+                    timestamp: serverTimestamp()
+                });
+
+                // Set up auto-clear
                 clearTimeout(this.typingTimeout);
                 this.typingTimeout = setTimeout(() => {
-                    this.isTyping = false;
-                    this.hideTypingIndicator();
-                }, 2000);
+                    this.clearTyping();
+                }, 3000);
+
+                // Clear on disconnect
+                onDisconnect(typingRef).remove();
             }
 
-            showTypingIndicator() {
-                this.typingIndicator.style.display = 'block';
-                this.scrollToBottom();
+            clearTyping() {
+                if (!this.isConnected) return;
+                const typingRef = ref(this.database, `typing/${this.userId}`);
+                set(typingRef, null);
             }
 
-            hideTypingIndicator() {
-                this.typingIndicator.style.display = 'none';
-            }
+            handleTypingIndicator(typingUsers) {
+                if (!typingUsers) {
+                    this.typingIndicator.style.display = 'none';
+                    return;
+                }
 
-            simulateOnlineUsers() {
-                // Add some initial users
-                const initialUsers = ['Emma', 'Liam', 'Olivia', 'Noah', 'Ava'];
-                initialUsers.forEach(user => this.users.add(user));
-                this.updateOnlineCount();
-            }
+                // Filter out current user and old entries
+                const now = Date.now();
+                const activeTypers = Object.values(typingUsers)
+                    .filter(user => user.username !== this.username)
+                    .filter(user => now - user.timestamp < 5000);
 
-            updateOnlineCount() {
-                this.onlineCount.textContent = this.users.size;
-            }
-
-            startPeriodicUpdates() {
-                // Simulate users joining/leaving occasionally
-                setInterval(() => {
-                    if (Math.random() < 0.2) {
-                        const names = ['Chris', 'Pat', 'Drew', 'Blake', 'Reese', 'Phoenix', 'River', 'Skyler'];
-                        const randomName = names[Math.floor(Math.random() * names.length)];
-                        
-                        if (!this.users.has(randomName)) {
-                            this.users.add(randomName);
-                            this.addSystemMessage(`${randomName} joined the chat`);
-                            this.updateOnlineCount();
-                        }
+                if (activeTypers.length === 0) {
+                    this.typingIndicator.style.display = 'none';
+                } else {
+                    const names = activeTypers.map(user => user.username);
+                    let text;
+                    if (names.length === 1) {
+                        text = `${names[0]} is typing...`;
+                    } else if (names.length === 2) {
+                        text = `${names[0]} and ${names[1]} are typing...`;
+                    } else {
+                        text = `${names.length} people are typing...`;
                     }
                     
-                    if (Math.random() < 0.1 && this.users.size > 3) {
-                        const usersArray = Array.from(this.users);
-                        const randomUser = usersArray[Math.floor(Math.random() * usersArray.length)];
-                        if (randomUser !== this.username) {
-                            this.users.delete(randomUser);
-                            this.addSystemMessage(`${randomUser} left the chat`);
-                            this.updateOnlineCount();
-                        }
-                    }
-                }, 10000);
+                    this.typingIndicator.textContent = text;
+                    this.typingIndicator.style.display = 'block';
+                    this.scrollToBottom();
+                }
             }
 
             scrollToBottom() {
@@ -552,7 +698,7 @@
 
         // Initialize the chat when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new GlobalChat();
+            new GlobalFirebaseChat();
         });
     </script>
 </body>
