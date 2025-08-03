@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Cool Chat System</title>
+    <title>Chat</title>
     <style>
         * {
             margin: 0;
@@ -12,528 +12,896 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #36393f;
+            color: #dcddde;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             overflow: hidden;
         }
 
-        .chat-container {
-            width: 95%;
-            max-width: 1200px;
-            height: 90vh;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .app-container {
             display: flex;
-            padding: 20px;
-            gap: 20px;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            height: 100vh;
         }
 
-        .chat-box {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 15px;
+        .sidebar {
+            width: 240px;
+            background: #2f3136;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
+            border-right: 1px solid #202225;
         }
 
-        .chat-box:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        .server-list {
+            width: 72px;
+            background: #202225;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            gap: 8px;
         }
 
-        .chat-header {
-            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            background: #5865f2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
-            padding: 20px;
-            text-align: center;
-            font-size: 18px;
             font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
             position: relative;
         }
 
-        .status-indicator {
+        .server-icon:hover {
+            border-radius: 16px;
+            background: #4752c4;
+        }
+
+        .server-icon.active::before {
+            content: '';
             position: absolute;
+            left: -16px;
             top: 50%;
-            right: 20px;
             transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #ff4757;
-            animation: pulse 2s infinite;
+            width: 8px;
+            height: 40px;
+            background: white;
+            border-radius: 0 4px 4px 0;
         }
 
-        .status-indicator.connected {
-            background: #2ed573;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        .messages {
+        .channel-sidebar {
             flex: 1;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .server-header {
+            height: 48px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: white;
+            border-bottom: 1px solid #202225;
+            box-shadow: 0 1px 0 rgba(4,4,5,0.2), 0 1.5px 0 rgba(6,6,7,0.05), 0 2px 0 rgba(4,4,5,0.05);
+        }
+
+        .channels-container {
+            flex: 1;
+            padding: 16px 8px;
             overflow-y: auto;
-            background: #f8f9ff;
         }
 
-        .message {
-            margin-bottom: 15px;
-            animation: slideIn 0.3s ease;
+        .channel-category {
+            color: #8e9297;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin: 16px 8px 0 8px;
+            letter-spacing: 0.02em;
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .channel-list {
+            margin-top: 8px;
         }
 
-        .message.own {
-            text-align: right;
+        .channel {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            margin: 1px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #8e9297;
+            transition: all 0.15s ease;
         }
 
-        .message-bubble {
-            display: inline-block;
-            padding: 12px 18px;
-            border-radius: 20px;
-            max-width: 70%;
-            word-wrap: break-word;
+        .channel:hover {
+            background: #393c43;
+            color: #dcddde;
         }
 
-        .message.own .message-bubble {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+        .channel.active {
+            background: #404249;
             color: white;
         }
 
-        .message.other .message-bubble {
-            background: white;
-            color: #333;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        .channel-icon {
+            margin-right: 6px;
+            font-size: 20px;
         }
 
-        .message-sender {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .input-area {
-            padding: 20px;
-            background: white;
-            border-top: 1px solid #eee;
+        .chat-area {
+            flex: 1;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            background: #36393f;
+        }
+
+        .chat-header {
+            height: 48px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #202225;
+            background: #36393f;
+            box-shadow: 0 1px 0 rgba(4,4,5,0.2), 0 1.5px 0 rgba(6,6,7,0.05), 0 2px 0 rgba(4,4,5,0.05);
+        }
+
+        .chat-title {
+            font-weight: 600;
+            color: white;
+            margin-left: 8px;
+        }
+
+        .channel-topic {
+            margin-left: 8px;
+            color: #8e9297;
+            font-size: 14px;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 0;
+        }
+
+        .message {
+            padding: 2px 16px;
+            margin-bottom: 17px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message:hover {
+            background: rgba(4,4,5,0.07);
+        }
+
+        .message-header {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+
+        .message-author {
+            font-weight: 500;
+            color: white;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .message-timestamp {
+            font-size: 12px;
+            color: #72767d;
+            margin-left: 8px;
+        }
+
+        .message-content {
+            color: #dcddde;
+            line-height: 1.375;
+            font-size: 16px;
+        }
+
+        .message-input-container {
+            padding: 0 16px 24px 16px;
+        }
+
+        .message-input-wrapper {
+            background: #40444b;
+            border-radius: 8px;
+            padding: 11px 16px;
+            display: flex;
+            align-items: center;
         }
 
         .message-input {
             flex: 1;
-            padding: 12px 18px;
-            border: 2px solid #ddd;
-            border-radius: 25px;
-            font-size: 14px;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        .message-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .send-btn, .join-btn {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: transparent;
             border: none;
-            padding: 12px 25px;
-            border-radius: 25px;
+            color: #dcddde;
+            font-size: 16px;
+            line-height: 1.375;
+            outline: none;
+            resize: none;
+            max-height: 144px;
+        }
+
+        .message-input::placeholder {
+            color: #72767d;
+        }
+
+        .send-button {
+            background: #5865f2;
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 8px;
+            transition: background 0.2s ease;
         }
 
-        .send-btn:hover, .join-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        .send-button:hover {
+            background: #4752c4;
         }
 
-        .join-screen {
-            position: absolute;
+        .send-button:disabled {
+            background: #4f545c;
+            cursor: not-allowed;
+        }
+
+        .connection-modal {
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.85);
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            gap: 20px;
-            border-radius: 15px;
+            justify-content: center;
+            z-index: 1000;
         }
 
-        .join-title {
+        .modal-content {
+            background: #36393f;
+            border-radius: 8px;
+            padding: 32px;
+            width: 440px;
+            max-width: 90vw;
+        }
+
+        .modal-header {
             font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .username-input {
-            padding: 15px 25px;
-            border: 2px solid #ddd;
-            border-radius: 25px;
-            font-size: 16px;
-            width: 250px;
-            text-align: center;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        .username-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .connection-info {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px;
-            font-size: 12px;
-            color: #666;
-            text-align: center;
-        }
-
-        .copy-btn {
-            background: #2ed573;
+            font-weight: 600;
             color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 11px;
-            margin-left: 5px;
+            margin-bottom: 8px;
+            text-align: center;
         }
 
-        .hidden {
-            display: none;
+        .modal-description {
+            color: #b9bbbe;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #b9bbbe;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.02em;
+        }
+
+        .modal-input {
+            width: 100%;
+            background: #202225;
+            border: 1px solid #202225;
+            color: #dcddde;
+            padding: 10px 12px;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #5865f2;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-button.primary {
+            background: #5865f2;
+            color: white;
+        }
+
+        .modal-button.primary:hover {
+            background: #4752c4;
+        }
+
+        .modal-button.secondary {
+            background: transparent;
+            color: #dcddde;
+            border: 1px solid #4f545c;
+        }
+
+        .modal-button.secondary:hover {
+            background: #4f545c;
+        }
+
+        .status-bar {
+            height: 52px;
+            background: #232428;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            border-top: 1px solid #202225;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .user-info:hover {
+            background: #393c43;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #5865f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .username {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-status {
+            font-size: 12px;
+            color: #b9bbbe;
+        }
+
+        .connection-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .connection-status.connected {
+            background: #3ba55d;
+            color: white;
+        }
+
+        .connection-status.connecting {
+            background: #faa81a;
+            color: white;
+        }
+
+        .connection-status.disconnected {
+            background: #ed4245;
+            color: white;
+        }
+
+        .system-message {
+            text-align: center;
+            color: #72767d;
+            font-size: 14px;
+            margin: 16px 0;
+            font-style: italic;
         }
 
         @media (max-width: 768px) {
-            .chat-container {
-                flex-direction: column;
-                height: 95vh;
-                gap: 10px;
-                padding: 10px;
+            .server-list {
+                width: 60px;
             }
             
-            .chat-box {
-                min-height: 45%;
+            .sidebar {
+                width: 200px;
             }
+            
+            .server-icon {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <!-- Left Chat Box -->
-        <div class="chat-box" id="leftBox">
-            <div class="chat-header">
-                User 1 Chat
-                <div class="status-indicator" id="leftStatus"></div>
-            </div>
-            <div class="messages" id="leftMessages"></div>
-            <div class="input-area">
-                <input type="text" class="message-input" id="leftInput" placeholder="Type your message..." disabled>
-                <button class="send-btn" id="leftSend" disabled>Send</button>
-            </div>
-            <div class="join-screen" id="leftJoin">
-                <div class="join-title">Join Chat as User 1</div>
-                <input type="text" class="username-input" id="leftUsername" placeholder="Enter your username">
-                <button class="join-btn" onclick="joinChat('left')">Join</button>
+    <div class="app-container">
+        <!-- Server List -->
+        <div class="server-list">
+            <div class="server-icon active" title="Chat Server">
+                💬
             </div>
         </div>
 
-        <!-- Right Chat Box -->
-        <div class="chat-box" id="rightBox">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="channel-sidebar">
+                <div class="server-header">
+                    P2P Chat Server
+                </div>
+                
+                <div class="channels-container">
+                    <div class="channel-category">Text Channels</div>
+                    <div class="channel-list">
+                        <div class="channel active">
+                            <span class="channel-icon">#</span>
+                            <span>general</span>
+                        </div>
+                    </div>
+
+                    <div class="channel-category">Connection</div>
+                    <div class="channel-list">
+                        <div class="channel" onclick="showConnectionModal()">
+                            <span class="channel-icon">🔗</span>
+                            <span>connect</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-bar">
+                    <div class="user-info">
+                        <div class="user-avatar" id="userAvatar">?</div>
+                        <div class="user-details">
+                            <div class="username" id="displayUsername">Not Connected</div>
+                            <div class="user-status" id="userStatus">Click connect to join</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="chat-area">
             <div class="chat-header">
-                User 2 Chat
-                <div class="status-indicator" id="rightStatus"></div>
+                <span class="channel-icon">#</span>
+                <span class="chat-title">general</span>
+                <span class="channel-topic">• P2P Chat Room</span>
+                <div style="margin-left: auto;">
+                    <span class="connection-status disconnected" id="connectionStatus">Disconnected</span>
+                </div>
             </div>
-            <div class="messages" id="rightMessages"></div>
-            <div class="input-area">
-                <input type="text" class="message-input" id="rightInput" placeholder="Type your message..." disabled>
-                <button class="send-btn" id="rightSend" disabled>Send</button>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="system-message">
+                    Welcome to the P2P chat! Click the "connect" channel to join a room.
+                </div>
             </div>
-            <div class="join-screen" id="rightJoin">
-                <div class="join-title">Join Chat as User 2</div>
-                <input type="text" class="username-input" id="rightUsername" placeholder="Enter your username">
-                <button class="join-btn" onclick="joinChat('right')">Join</button>
+
+            <div class="message-input-container">
+                <div class="message-input-wrapper">
+                    <input type="text" class="message-input" id="messageInput" 
+                           placeholder="Message #general" disabled>
+                    <button class="send-button" id="sendButton" disabled>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="connection-info" id="connectionInfo" style="position: fixed; bottom: 10px; left: 10px; right: 10px;">
-        <div>Connection ID: <span id="connectionId">Not connected</span> 
-        <button class="copy-btn" onclick="copyConnectionId()">Copy</button></div>
-        <div style="margin-top: 5px;">Share this ID with someone to connect!</div>
+    <!-- Connection Modal -->
+    <div class="connection-modal" id="connectionModal">
+        <div class="modal-content">
+            <div class="modal-header">Join Chat Room</div>
+            <div class="modal-description">Enter your username and room ID to connect</div>
+            
+            <div class="input-group">
+                <label class="input-label">Username</label>
+                <input type="text" class="modal-input" id="usernameInput" placeholder="Enter your username">
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Room ID</label>
+                <input type="text" class="modal-input" id="roomIdInput" placeholder="Enter room ID or leave blank to create new">
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="modal-button secondary" onclick="hideConnectionModal()">Cancel</button>
+                <button class="modal-button primary" onclick="connectToRoom()">Connect</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        class P2PChat {
+        class DiscordP2PChat {
             constructor() {
-                this.localConnection = null;
-                this.remoteConnection = null;
+                this.peerConnection = null;
                 this.dataChannel = null;
-                this.connectionId = Math.random().toString(36).substr(2, 9);
                 this.username = '';
-                this.side = '';
+                this.roomId = '';
+                this.isHost = false;
                 this.isConnected = false;
+                this.remoteUsername = '';
                 
-                document.getElementById('connectionId').textContent = this.connectionId;
                 this.setupEventListeners();
+                this.updateUI();
             }
 
             setupEventListeners() {
-                // Enter key support for inputs
+                // Enter key support
                 document.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
-                        if (e.target.classList.contains('username-input')) {
-                            if (e.target.id === 'leftUsername') joinChat('left');
-                            if (e.target.id === 'rightUsername') joinChat('right');
-                        } else if (e.target.classList.contains('message-input')) {
-                            if (e.target.id === 'leftInput') this.sendMessage('left');
-                            if (e.target.id === 'rightInput') this.sendMessage('right');
+                        if (e.target.id === 'messageInput' && !e.target.disabled) {
+                            this.sendMessage();
+                        } else if (e.target.classList.contains('modal-input')) {
+                            connectToRoom();
                         }
                     }
                 });
 
-                // Send button clicks
-                document.getElementById('leftSend').onclick = () => this.sendMessage('left');
-                document.getElementById('rightSend').onclick = () => this.sendMessage('right');
+                document.getElementById('sendButton').onclick = () => this.sendMessage();
             }
 
-            async joinChat(side) {
-                const usernameInput = document.getElementById(side + 'Username');
-                const username = usernameInput.value.trim();
-                
+            async connectToRoom() {
+                const username = document.getElementById('usernameInput').value.trim();
+                const roomId = document.getElementById('roomIdInput').value.trim();
+
                 if (!username) {
-                    alert('Please enter a username!');
+                    alert('Please enter a username');
                     return;
                 }
 
                 this.username = username;
-                this.side = side;
+                this.roomId = roomId || this.generateRoomId();
+                this.isHost = !roomId; // If no room ID provided, user becomes host
 
-                // Hide join screen
-                document.getElementById(side + 'Join').classList.add('hidden');
-                
-                // Enable inputs
-                document.getElementById(side + 'Input').disabled = false;
-                document.getElementById(side + 'Send').disabled = false;
+                this.updateConnectionStatus('connecting');
+                hideConnectionModal();
 
-                // Update header
-                document.querySelector(`#${side}Box .chat-header`).textContent = `${username}'s Chat`;
-                const statusIndicator = document.createElement('div');
-                statusIndicator.className = 'status-indicator';
-                statusIndicator.id = side + 'Status';
-                document.querySelector(`#${side}Box .chat-header`).appendChild(statusIndicator);
-
-                // Add welcome message
-                this.addMessage(side, 'System', 'Welcome to the chat! Waiting for connection...', 'system');
-
-                // Start connection process
-                await this.initializeConnection();
-            }
-
-            async initializeConnection() {
                 try {
-                    // Create peer connection
-                    this.localConnection = new RTCPeerConnection({
-                        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-                    });
-
-                    // Create data channel
-                    this.dataChannel = this.localConnection.createDataChannel('chat', {
-                        ordered: true
-                    });
-
-                    this.setupDataChannel(this.dataChannel);
-
-                    // Handle incoming data channels
-                    this.localConnection.ondatachannel = (event) => {
-                        const channel = event.channel;
-                        this.setupDataChannel(channel);
-                    };
-
-                    // Handle ICE candidates
-                    this.localConnection.onicecandidate = (event) => {
-                        if (event.candidate) {
-                            // In a real implementation, you'd send this to the remote peer
-                            // For this demo, we'll simulate local connection
-                            this.handleRemoteIceCandidate(event.candidate);
-                        }
-                    };
-
-                    // Create offer
-                    const offer = await this.localConnection.createOffer();
-                    await this.localConnection.setLocalDescription(offer);
-
-                    // Simulate connection establishment
-                    setTimeout(() => {
-                        this.simulateConnection();
-                    }, 1000);
+                    await this.initializePeerConnection();
+                    this.addSystemMessage(`${this.isHost ? 'Created' : 'Joining'} room: ${this.roomId}`);
+                    
+                    if (this.isHost) {
+                        this.addSystemMessage('Waiting for someone to join...');
+                        this.addSystemMessage(`Share this room ID: ${this.roomId}`);
+                    }
 
                 } catch (error) {
-                    console.error('Connection error:', error);
-                    this.addMessage(this.side, 'System', 'Connection failed. Please try again.', 'system');
+                    console.error('Connection failed:', error);
+                    this.addSystemMessage('Connection failed. Please try again.');
+                    this.updateConnectionStatus('disconnected');
                 }
             }
 
-            async simulateConnection() {
-                // Simulate successful connection for demo purposes
-                this.isConnected = true;
-                
-                // Update status indicators
-                const leftStatus = document.getElementById('leftStatus');
-                const rightStatus = document.getElementById('rightStatus');
-                
-                if (leftStatus) leftStatus.classList.add('connected');
-                if (rightStatus) rightStatus.classList.add('connected');
+            async initializePeerConnection() {
+                this.peerConnection = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                });
 
-                // Add connection message
-                this.addMessage(this.side, 'System', 'Connected! You can now start chatting.', 'system');
-                
-                // If both sides are active, simulate the other user
-                this.simulateOtherUser();
-            }
-
-            simulateOtherUser() {
-                // Add a simulated user on the opposite side for demo
-                const otherSide = this.side === 'left' ? 'right' : 'left';
-                const otherJoinScreen = document.getElementById(otherSide + 'Join');
-                
-                if (!otherJoinScreen.classList.contains('hidden')) {
-                    setTimeout(() => {
-                        // Simulate other user joining
-                        document.getElementById(otherSide + 'Username').value = 'Demo User';
-                        this.simulateJoin(otherSide);
-                    }, 2000);
+                // Set up data channel
+                if (this.isHost) {
+                    this.dataChannel = this.peerConnection.createDataChannel('chat', {
+                        ordered: true
+                    });
+                    this.setupDataChannel(this.dataChannel);
+                } else {
+                    this.peerConnection.ondatachannel = (event) => {
+                        this.dataChannel = event.channel;
+                        this.setupDataChannel(this.dataChannel);
+                    };
                 }
-            }
 
-            simulateJoin(side) {
-                const otherUsername = 'Demo User';
-                
-                // Hide join screen
-                document.getElementById(side + 'Join').classList.add('hidden');
-                
-                // Enable inputs
-                document.getElementById(side + 'Input').disabled = false;
-                document.getElementById(side + 'Send').disabled = false;
+                // Handle ICE candidates
+                this.peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        this.shareSignalingData({
+                            type: 'ice-candidate',
+                            candidate: event.candidate,
+                            roomId: this.roomId
+                        });
+                    }
+                };
 
-                // Update header
-                document.querySelector(`#${side}Box .chat-header`).textContent = `${otherUsername}'s Chat`;
-                const statusIndicator = document.createElement('div');
-                statusIndicator.className = 'status-indicator connected';
-                statusIndicator.id = side + 'Status';
-                document.querySelector(`#${side}Box .chat-header`).appendChild(statusIndicator);
+                // Handle connection state changes
+                this.peerConnection.onconnectionstatechange = () => {
+                    const state = this.peerConnection.connectionState;
+                    console.log('Connection state:', state);
+                    
+                    if (state === 'connected') {
+                        this.updateConnectionStatus('connected');
+                        this.addSystemMessage('Connected successfully!');
+                    } else if (state === 'disconnected' || state === 'failed') {
+                        this.updateConnectionStatus('disconnected');
+                        this.addSystemMessage('Connection lost');
+                        this.isConnected = false;
+                    }
+                };
 
-                // Add welcome message
-                this.addMessage(side, 'System', `${otherUsername} joined the chat!`, 'system');
+                // Create offer if host
+                if (this.isHost) {
+                    const offer = await this.peerConnection.createOffer();
+                    await this.peerConnection.setLocalDescription(offer);
+                    
+                    this.shareSignalingData({
+                        type: 'offer',
+                        offer: offer,
+                        roomId: this.roomId,
+                        username: this.username
+                    });
+                } else {
+                    // Guest waits for offer
+                    this.listenForSignalingData();
+                }
+
+                this.updateUI();
             }
 
             setupDataChannel(channel) {
                 channel.onopen = () => {
                     console.log('Data channel opened');
+                    this.isConnected = true;
+                    this.updateConnectionStatus('connected');
+                    
+                    // Send initial greeting
+                    this.sendDataChannelMessage({
+                        type: 'user-joined',
+                        username: this.username
+                    });
                 };
 
                 channel.onmessage = (event) => {
                     const data = JSON.parse(event.data);
-                    const otherSide = this.side === 'left' ? 'right' : 'left';
-                    this.addMessage(otherSide, data.username, data.message, 'other');
+                    this.handleDataChannelMessage(data);
                 };
 
                 channel.onclose = () => {
                     console.log('Data channel closed');
                     this.isConnected = false;
+                    this.updateConnectionStatus('disconnected');
+                    this.addSystemMessage('Peer disconnected');
+                };
+
+                channel.onerror = (error) => {
+                    console.error('Data channel error:', error);
                 };
             }
 
-            sendMessage(side) {
-                const input = document.getElementById(side + 'Input');
+            handleDataChannelMessage(data) {
+                switch (data.type) {
+                    case 'chat-message':
+                        this.addMessage(data.username, data.message, data.timestamp);
+                        break;
+                    case 'user-joined':
+                        this.remoteUsername = data.username;
+                        this.addSystemMessage(`${data.username} joined the chat`);
+                        break;
+                }
+            }
+
+            sendDataChannelMessage(data) {
+                if (this.dataChannel && this.dataChannel.readyState === 'open') {
+                    this.dataChannel.send(JSON.stringify(data));
+                }
+            }
+
+            sendMessage() {
+                const input = document.getElementById('messageInput');
                 const message = input.value.trim();
                 
-                if (!message) return;
+                if (!message || !this.isConnected) return;
 
-                // Add message to sender's side
-                this.addMessage(side, this.username, message, 'own');
+                const timestamp = new Date();
+                this.addMessage(this.username, message, timestamp, true);
                 
-                // Simulate sending to other side (in real app, this would go through WebRTC)
-                const otherSide = side === 'left' ? 'right' : 'left';
-                setTimeout(() => {
-                    this.addMessage(otherSide, this.username, message, 'other');
-                }, 100);
+                this.sendDataChannelMessage({
+                    type: 'chat-message',
+                    username: this.username,
+                    message: message,
+                    timestamp: timestamp.toISOString()
+                });
 
                 input.value = '';
             }
 
-            addMessage(side, sender, message, type) {
-                const messagesContainer = document.getElementById(side + 'Messages');
+            addMessage(username, content, timestamp, isOwn = false) {
+                const container = document.getElementById('messagesContainer');
                 const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${type}`;
-                
-                if (type === 'system') {
-                    messageDiv.innerHTML = `<div class="message-bubble" style="background: #f39c12; color: white;">${message}</div>`;
-                } else {
-                    messageDiv.innerHTML = `
-                        <div class="message-sender">${sender}</div>
-                        <div class="message-bubble">${message}</div>
-                    `;
-                }
-                
-                messagesContainer.appendChild(messageDiv);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                messageDiv.className = 'message';
+
+                const time = new Date(timestamp);
+                const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-author" style="color: ${isOwn ? '#00b0f4' : '#f23f43'}">${username}</span>
+                        <span class="message-timestamp">${timeString}</span>
+                    </div>
+                    <div class="message-content">${this.escapeHtml(content)}</div>
+                `;
+
+                container.appendChild(messageDiv);
+                container.scrollTop = container.scrollHeight;
             }
 
-            async handleRemoteIceCandidate(candidate) {
-                // In a real implementation, this would handle remote ICE candidates
-                // For demo purposes, we'll skip this
+            addSystemMessage(message) {
+                const container = document.getElementById('messagesContainer');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'system-message';
+                messageDiv.textContent = message;
+                container.appendChild(messageDiv);
+                container.scrollTop = container.scrollHeight;
+            }
+
+            updateConnectionStatus(status) {
+                const statusElement = document.getElementById('connectionStatus');
+                const userStatus = document.getElementById('userStatus');
+                
+                statusElement.className = `connection-status ${status}`;
+                
+                switch (status) {
+                    case 'connected':
+                        statusElement.textContent = 'Connected';
+                        userStatus.textContent = `Connected to ${this.roomId}`;
+                        break;
+                    case 'connecting':
+                        statusElement.textContent = 'Connecting...';
+                        userStatus.textContent = 'Connecting...';
+                        break;
+                    case 'disconnected':
+                        statusElement.textContent = 'Disconnected';
+                        userStatus.textContent = 'Click connect to join';
+                        break;
+                }
+            }
+
+            updateUI() {
+                const messageInput = document.getElementById('messageInput');
+                const sendButton = document.getElementById('sendButton');
+                const displayUsername = document.getElementById('displayUsername');
+                const userAvatar = document.getElementById('userAvatar');
+
+                if (this.username) {
+                    displayUsername.textContent = this.username;
+                    userAvatar.textContent = this.username.charAt(0).toUpperCase();
+                    messageInput.disabled = !this.isConnected;
+                    sendButton.disabled = !this.isConnected;
+                } else {
+                    displayUsername.textContent = 'Not Connected';
+                    userAvatar.textContent = '?';
+                    messageInput.disabled = true;
+                    sendButton.disabled = true;
+                }
+            }
+
+            generateRoomId() {
+                return Math.random().toString(36).substr(2, 8).toUpperCase();
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // Simple signaling using localStorage (for demo purposes)
+            // In production, you'd use a proper signaling server
+            shareSignalingData(data) {
+                const key = `p2p-signal-${this.roomId}`;
+                const existing = JSON.parse(localStorage.getItem(key) || '[]');
+                existing.push({ ...data, timestamp: Date.now(), from: this.username });
+                localStorage.setItem(key, JSON.stringify(existing));
+            }
+
+            listenForSignalingData() {
+                const key = `p2p-signal-${this.roomId}`;
+                
+                const checkForSignals = () => {
+                    const signals = JSON.parse(localStorage.getItem(key) || '[]');
+                    const newSignals = signals.filter(s => s.from !== this.username && !s.processed);
+                    
+                    newSignals.forEach(async signal => {
+                        signal.processed = true;
+                        
+                        if (signal.type === 'offer') {
+                            this.remoteUsername = signal.username;
+                            await this.peerConnection.setRemoteDescription(signal.offer);
+                            const answer = await this.peerConnection.createAnswer();
+                            await this.peerConnection.setLocalDescription(answer);
+                            
+                            this.shareSignalingData({
+                                type: 'answer',
+                                answer: answer,
+                                roomId: this.roomId,
+                                username: this.username
+                            });
+                        } else if (signal.type === 'answer') {
+                            await this.peerConnection.setRemoteDescription(signal.answer);
+                        } else if (signal.type === 'ice-candidate') {
+                            await this.peerConnection.addIceCandidate(signal.candidate);
+                        }
+                    });
+                    
+                    localStorage.setItem(key, JSON.stringify(signals));
+                };
+                
+                // Check for signals periodically
+                setInterval(checkForSignals, 1000);
+                checkForSignals();
             }
         }
 
         // Global chat instance
-        let chat = new P2PChat();
+        let chat = new DiscordP2PChat();
 
         // Global functions
-        function joinChat(side) {
-            chat.joinChat(side);
+        function showConnectionModal() {
+            document.getElementById('connectionModal').classList.remove('hidden');
+            document.getElementById('usernameInput').focus();
         }
 
-        function copyConnectionId() {
-            const connectionId = document.getElementById('connectionId').textContent;
-            navigator.clipboard.writeText(connectionId).then(() => {
-                alert('Connection ID copied to clipboard!');
-            });
+        function hideConnectionModal() {
+            document.getElementById('connectionModal').classList.add('hidden');
         }
+
+        function connectToRoom() {
+            chat.connectToRoom();
+        }
+
+        // Auto-focus username input when modal opens
+        document.getElementById('connectionModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                hideConnectionModal();
+            }
+        });
     </script>
 </body>
 </html>
